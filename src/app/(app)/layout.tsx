@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BottomNav } from "@/components/BottomNav";
@@ -18,6 +19,10 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Per-request CSP nonce set by middleware; tags the no-flash inline script
+  // below so it is allowed under the nonce-based Content-Security-Policy.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -43,6 +48,7 @@ export default async function AppLayout({
       {/* No-flash: set the feature-flag attributes on <html> before paint so a
           user who disabled a feature never sees it flash on during hydration. */}
       <script
+        nonce={nonce}
         dangerouslySetInnerHTML={{ __html: featureFlagScript(appearance) }}
       />
       <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col bg-bg">

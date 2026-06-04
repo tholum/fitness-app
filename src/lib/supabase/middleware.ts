@@ -4,9 +4,19 @@ import { NextResponse, type NextRequest } from "next/server";
 /** One cookie as handed to `setAll` by @supabase/ssr. */
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
-/** Refreshes the Supabase session on every request and gates protected routes. */
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+/**
+ * Refreshes the Supabase session on every request and gates protected routes.
+ *
+ * `requestHeaders` are forwarded onto the (possibly recreated) response request
+ * so values set by the caller — notably the per-request CSP nonce — reach the
+ * server components / framework. See src/middleware.ts for the nonce wiring.
+ */
+export async function updateSession(
+  request: NextRequest,
+  requestHeaders?: Headers,
+) {
+  const headers = requestHeaders ?? request.headers;
+  let supabaseResponse = NextResponse.next({ request: { headers } });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,7 +31,7 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next({ request: { headers } });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
           );

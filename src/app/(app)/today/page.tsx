@@ -13,6 +13,7 @@ import {
   getNudges,
   getUnseenNudgeCount,
 } from "@/lib/queries";
+import { validateVideoUrl } from "@/lib/format";
 import { NudgeInbox } from "../checkin/_components";
 
 /* ════════════════════════════════════════════════════════════════════
@@ -100,7 +101,10 @@ export default async function TodayPage() {
     session?.log.title ?? day?.title ?? "No active program";
   const estMinutes = day?.est_minutes ?? session?.log.duration_min ?? null;
   const blockCount = today?.blocks.length ?? session?.blocks.length ?? 0;
-  const videoUrl = day?.video_url ?? null;
+  // Re-validate at render: the value could predate the 0007 DB CHECK (applied
+  // via `pnpm db:push`). Only an https://mtntough.com link survives as an href;
+  // anything else (e.g. a javascript: URL) falls back to the safe default.
+  const videoUrl = validateVideoUrl(day?.video_url);
 
   const eyebrowSource =
     program?.source === "MTNTOUGH" ? "MTNTOUGH" : program?.name ?? null;

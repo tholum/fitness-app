@@ -73,6 +73,26 @@ function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+/**
+ * An avatar URL is only safe to drop into `<img src>` if it is an absolute
+ * https: URL. We reject everything else — http:, and especially javascript:/
+ * data:/blob: schemes (tracking/beacon vectors; the server + DB enforce the
+ * same rule, this is the first line so the live preview never loads a hostile
+ * src). Returns the canonicalized https URL, or null when blank/invalid.
+ * Mirrors normalizeAvatarUrl() in src/lib/actions.ts (the authoritative
+ * server-side check) and safe_avatar_url() in the 0005 migration.
+ */
+function safeAvatarUrl(raw: string): string | null {
+  const v = raw.trim();
+  if (!v) return null;
+  try {
+    const u = new URL(v);
+    return u.protocol === "https:" ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 /* ════════════════════════════════════════════════════════════════════
    ProfileForm — editable display_name + avatar_url → updateProfile.
    Controlled name input drives the live avatar preview / monogram.
@@ -108,10 +128,19 @@ export function ProfileForm({
       return;
     }
 
+    // Validate the avatar URL before sending it. Blank is allowed (clears the
+    // avatar → monogram fallback); a non-blank value must be an https: URL.
+    const rawAvatar = avatar.trim();
+    const safeAvatar = safeAvatarUrl(rawAvatar);
+    if (rawAvatar && !safeAvatar) {
+      setError("Avatar URL must be a full https:// link.");
+      return;
+    }
+
     startTransition(async () => {
       const res = await updateProfile({
         display_name: trimmed,
-        avatar_url: avatar.trim() || null,
+        avatar_url: safeAvatar,
       });
       if (!res.ok) {
         setError(res.error ?? "Could not save.");
@@ -122,7 +151,10 @@ export function ProfileForm({
     });
   }
 
-  const preview = avatar.trim();
+  // Only ever feed a validated https URL into <img src>. A javascript:/data:/
+  // blob: or otherwise-malformed value falls back to the monogram instead of
+  // loading a hostile/beacon src in the owner's browser.
+  const preview = safeAvatarUrl(avatar);
 
   return (
     <Card className="p-5">

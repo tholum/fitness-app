@@ -1,10 +1,117 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "password" | "magic";
+
+/**
+ * Cloudflare Turnstile site key. When unset the captcha is disabled and the
+ * forms behave exactly as before — keeping local/dev and unconfigured
+ * deployments working with no extra setup. When set, every auth call below
+ * (sign-in, sign-up, magic link) requires a fresh `captchaToken`, which is the
+ * app-side half of the rate-limiting fix: Supabase Auth → Rate Limits caps
+ * attempts per IP/email server-side, and this widget forces a proof-of-work /
+ * interaction before a request is ever made, blunting scripted credential
+ * stuffing and magic-link mail-bombing (threat model A). Must also be enabled
+ * in the Supabase dashboard (Auth → Settings → Enable Captcha protection,
+ * provider = Turnstile) for the token to be verified.
+ */
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+const TURNSTILE_SRC =
+  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+
+type TurnstileApi = {
+  render: (
+    el: HTMLElement,
+    opts: {
+      sitekey: string;
+      theme?: "dark" | "light" | "auto";
+      callback: (token: string) => void;
+      "error-callback"?: () => void;
+      "expired-callback"?: () => void;
+    },
+  ) => string;
+  reset: (widgetId?: string) => void;
+};
+
+declare global {
+  interface Window {
+    turnstile?: TurnstileApi;
+  }
+}
+
+/** Load the Turnstile script once (idempotent across mounts). */
+let turnstileScriptPromise: Promise<void> | null = null;
+function loadTurnstileScript(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (window.turnstile) return Promise.resolve();
+  if (turnstileScriptPromise) return turnstileScriptPromise;
+  turnstileScriptPromise = new Promise<void>((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = TURNSTILE_SRC;
+    s.async = true;
+    s.defer = true;
+    s.onload = () => resolve();
+    s.onerror = () => {
+      // Allow a later mount to retry rather than wedging on a failed load.
+      turnstileScriptPromise = null;
+      reject(new Error("Failed to load captcha"));
+    };
+    // Injected from this already-trusted (nonce'd) bundle, so under the app's
+    // `strict-dynamic` CSP the loader and the resources it pulls are trusted
+    // transitively — no per-tag nonce or script-src host change required.
+    document.head.appendChild(s);
+  });
+  return turnstileScriptPromise;
+}
+
+/**
+ * Renders a Turnstile widget when a site key is configured and surfaces the
+ * latest token. Returns `enabled=false` (and an always-ready token) when no
+ * key is set so callers can stay agnostic. `reset()` clears the consumed
+ * single-use token after each auth attempt.
+ */
+function useTurnstile() {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const widgetIdRef = useRef<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const enabled = Boolean(TURNSTILE_SITE_KEY);
+
+  useEffect(() => {
+    if (!enabled || !containerRef.current) return;
+    let cancelled = false;
+    loadTurnstileScript()
+      .then(() => {
+        if (cancelled || !containerRef.current || !window.turnstile) return;
+        // Avoid double-render under React 18/19 strict-mode double effects.
+        if (widgetIdRef.current) return;
+        widgetIdRef.current = window.turnstile.render(containerRef.current, {
+          sitekey: TURNSTILE_SITE_KEY!,
+          theme: "dark",
+          callback: (t) => setToken(t),
+          "error-callback": () => setToken(null),
+          "expired-callback": () => setToken(null),
+        });
+      })
+      .catch(() => {
+        /* surfaced to the user as a missing token on submit */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled]);
+
+  const reset = useCallback(() => {
+    setToken(null);
+    if (widgetIdRef.current && window.turnstile) {
+      window.turnstile.reset(widgetIdRef.current);
+    }
+  }, []);
+
+  return { enabled, token, reset, containerRef };
+}
 
 /**
  * `useSearchParams()` forces this subtree to render on the client, so it must
@@ -24,6 +131,13 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [magicSent, setMagicSent] = useState(false);
 
+  const { enabled: captchaEnabled, token: captchaToken, reset: resetCaptcha, containerRef: captchaRef } =
+    useTurnstile();
+  // When captcha is on, block submission until a token exists. The widget's
+  // single-use token is also reset after every attempt below so a retry forces
+  // a fresh challenge.
+  const captchaMissing = captchaEnabled && !captchaToken;
+
   function switchMode(m: Mode) {
     setMode(m);
     setError(null);
@@ -32,19 +146,31 @@ function LoginForm() {
 
   async function handlePassword(e: React.FormEvent) {
     e.preventDefault();
+    if (captchaMissing) {
+      setError("Please complete the verification first.");
+      return;
+    }
     setError(null);
     setLoading(true);
     const supabase = createClient();
+    const captcha = captchaToken ?? undefined;
     try {
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
+          options: {
+            emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+            captchaToken: captcha,
+          },
         });
         if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+          options: { captchaToken: captcha },
+        });
         if (error) throw error;
       }
       router.push(next);
@@ -52,25 +178,36 @@ function LoginForm() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
+      // Turnstile tokens are single-use; clear it so the next submit re-challenges.
+      resetCaptcha();
       setLoading(false);
     }
   }
 
   async function handleMagic(e: React.FormEvent) {
     e.preventDefault();
+    if (captchaMissing) {
+      setError("Please complete the verification first.");
+      return;
+    }
     setError(null);
     setLoading(true);
     const supabase = createClient();
+    const captcha = captchaToken ?? undefined;
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
+        options: {
+          emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          captchaToken: captcha,
+        },
       });
       if (error) throw error;
       setMagicSent(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
+      resetCaptcha();
       setLoading(false);
     }
   }
@@ -160,7 +297,7 @@ function LoginForm() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || captchaMissing}
                 className="mt-1 w-full rounded-[18px] bg-grad px-4 py-4 font-display text-[15px] font-semibold uppercase tracking-wider text-bg shadow-[0_8px_24px_rgba(200,98,45,0.3)] disabled:opacity-60"
               >
                 {loading ? "..." : isSignUp ? "Create account" : "Sign in"}
@@ -211,7 +348,7 @@ function LoginForm() {
 
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || captchaMissing}
                     className="mt-1 w-full rounded-[18px] bg-grad px-4 py-4 font-display text-[15px] font-semibold uppercase tracking-wider text-bg shadow-[0_8px_24px_rgba(200,98,45,0.3)] disabled:opacity-60"
                   >
                     {loading ? "..." : "Send magic link"}
@@ -219,6 +356,17 @@ function LoginForm() {
                 </>
               )}
             </form>
+          )}
+
+          {/* Captcha lives at the card level (outside the two <form>s) so the
+              single Turnstile widget instance survives password⇄magic toggles
+              and isn't torn down/re-created. Only present when a site key is
+              configured; otherwise this renders nothing and the forms are
+              unchanged. */}
+          {captchaEnabled && (
+            <div className="mt-4 flex justify-center">
+              <div ref={captchaRef} />
+            </div>
           )}
         </div>
       </div>

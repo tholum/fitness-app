@@ -21,6 +21,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui";
+import { validateVideoUrl } from "@/lib/format";
 
 /* ── shared shapes (kept local so the file is self-contained) ─────────── */
 export type ExerciseCategory =
@@ -459,6 +460,13 @@ export function ExerciseList({
         <div className="space-y-2.5">
           {filtered.map((e) => {
             const mine = myId != null && e.owner_id === myId;
+            // This list shows PUBLIC (cross-user) exercises, so re-validate
+            // default_video_url before using it as an href. Without this a
+            // poisoned value (e.g. a javascript: URL written directly via
+            // PostgREST before the 0007 DB CHECK is applied, on an is_public
+            // row) is stored XSS against every other user who opens the
+            // library. Only an https://mtntough.com link survives.
+            const safeVideoUrl = validateVideoUrl(e.default_video_url);
             return (
               <Card key={e.id} className="flex items-center gap-3 p-3.5">
                 <div className="min-w-0 flex-1">
@@ -476,9 +484,9 @@ export function ExerciseList({
                     <span className="font-cond uppercase tracking-wide text-gold">
                       {CAT_LABEL[e.category]}
                     </span>
-                    {e.default_video_url ? (
+                    {safeVideoUrl ? (
                       <a
-                        href={e.default_video_url}
+                        href={safeVideoUrl}
                         target="_blank"
                         rel="noreferrer"
                         onClick={(ev) => ev.stopPropagation()}

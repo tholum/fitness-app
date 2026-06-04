@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { SectionHeader } from "@/components/ui";
+import { validateVideoUrl } from "@/lib/format";
 import {
   ExercisesProvider,
   NewExerciseButton,
@@ -39,6 +40,9 @@ async function createExercise(
   const name = input.name.trim();
   if (!name) return { ok: false, error: "Name is required." };
 
+  const video = cleanVideoUrl(input.defaultVideoUrl);
+  if ("error" in video) return { ok: false, error: video.error };
+
   const { data, error } = await supabase
     .from("exercises")
     .insert({
@@ -46,7 +50,7 @@ async function createExercise(
       is_public: input.isPublic ?? false,
       name,
       category: input.category,
-      default_video_url: clean(input.defaultVideoUrl),
+      default_video_url: video.url,
       cues: clean(input.cues),
     })
     .select("id")
@@ -71,12 +75,15 @@ async function updateExercise(
   const name = input.name.trim();
   if (!name) return { ok: false, error: "Name is required." };
 
+  const video = cleanVideoUrl(input.defaultVideoUrl);
+  if ("error" in video) return { ok: false, error: video.error };
+
   const { error } = await supabase
     .from("exercises")
     .update({
       name,
       category: input.category,
-      default_video_url: clean(input.defaultVideoUrl),
+      default_video_url: video.url,
       cues: clean(input.cues),
       is_public: input.isPublic ?? false,
     })
@@ -112,6 +119,26 @@ function clean(v: string | null | undefined): string | null {
   if (v == null) return null;
   const s = v.trim();
   return s === "" ? null : s;
+}
+
+/**
+ * Validate an optional video URL before storing it. A blank value is allowed
+ * (yields `{ url: null }`); a non-blank value MUST pass `validateVideoUrl`
+ * (https mtntough.com link only). This blocks stored XSS via `javascript:`/
+ * `data:` schemes, which would otherwise execute when the value is rendered
+ * as an anchor href in the (public, cross-user readable) exercise list.
+ * Returns `{ error }` instead of silently dropping a bad link so the user
+ * gets feedback rather than confusing data loss.
+ */
+function cleanVideoUrl(
+  v: string | null | undefined,
+): { url: string | null } | { error: string } {
+  if (clean(v) == null) return { url: null };
+  const url = validateVideoUrl(v);
+  if (url == null) {
+    return { error: "Video link must be a valid https://mtntough.com URL." };
+  }
+  return { url };
 }
 
 export default async function ExercisesPage() {

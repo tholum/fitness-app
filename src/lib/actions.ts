@@ -29,6 +29,82 @@ export interface ActionResult<T = undefined> {
   data?: T;
 }
 
+// ── Free-text length bounds (gap: server-side input caps) ───────────────────
+// Server actions previously validated non-empty but never capped length, so a
+// caller hitting the action (or the table directly via the publishable key)
+// could persist arbitrarily large strings — UI flooding / storage abuse,
+// especially for the shared crew feed. These caps are enforced here AND mirror
+// CHECK constraints in supabase/migrations/0005_security.sql so the direct-table
+// path is bounded too. Limits are >= the client `maxLength` so valid input is
+// never rejected; the note cap matches the feed textarea's maxLength (280).
+const LIMITS = {
+  noteBody: 280, // crew feed note (mirrors textarea maxLength)
+  displayName: 80,
+  crewName: 80,
+  sessionTitle: 200,
+  prLabel: 120,
+  unit: 24,
+  mealName: 120,
+  blockLabel: 200,
+  notes: 4000, // session notes (a few KB)
+  avatarUrl: 2048, // URL — generous but bounded
+} as const;
+
+/**
+ * Validate that a (already-trimmed) string is within `max` characters,
+ * returning an error result when it overflows (else null). Length is measured by
+ * Unicode code units (String.length), matching the textarea `maxLength` the
+ * client enforces; the DB CHECKs use char_length, which is >= this for the
+ * BMP-dominant content here, so a server-accepted value never trips a CHECK.
+ *
+ * Typed as ActionResult<never> so the error return is assignable to any
+ * ActionResult<T> caller (the data-bearing actions like completeSession /
+ * createCrew / logPR), since it never carries a `data` payload.
+ */
+function tooLong(value: string, max: number, label: string): ActionResult<never> | null {
+  if (value.length > max) {
+    return { ok: false, error: `${label} must be ${max} characters or fewer` };
+  }
+  return null;
+}
+
+/**
+ * Canonicalize a user-supplied avatar URL, enforcing an https-only scheme.
+ *
+ * avatar_url is persisted to profiles and (today) rendered as `<img src>` in
+ * the owner's own account preview. Without this check a caller can store a
+ * javascript:/data:/blob: or arbitrary external URL; in an <img src> that is a
+ * tracking/beacon vector rather than script execution, but it is still
+ * unwanted, and if avatars ever become visible to crew-mates an unvalidated
+ * value becomes a cross-user beacon. We require an absolute https: URL so the
+ * stored value is always a safe, network-only image reference. This is the
+ * server-side trust boundary (the publishable key reaches this action via the
+ * client); a matching CHECK in supabase/migrations/0005_security_avatar_url.sql
+ * bounds the direct-to-PostgREST path, and safeAvatarUrl() in
+ * account/_components.tsx is the client mirror.
+ *
+ * Returns { value } with the canonical https URL (or null when the input is
+ * blank/null → clears the avatar), or { error } when a non-blank value is not
+ * a valid https URL.
+ */
+function normalizeAvatarUrl(
+  raw: string | null | undefined,
+): { value: string | null } | { error: string } {
+  if (raw == null) return { value: null };
+  const v = raw.trim();
+  if (!v) return { value: null };
+  let parsed: URL;
+  try {
+    parsed = new URL(v);
+  } catch {
+    return { error: "Avatar URL must be a full https:// link" };
+  }
+  if (parsed.protocol !== "https:") {
+    return { error: "Avatar URL must be a full https:// link" };
+  }
+  return { value: parsed.toString() };
+}
+
 async function requireUser() {
   const supabase = await createClient();
   const {
@@ -89,6 +165,19 @@ export async function completeSession(
 ): Promise<ActionResult<{ sessionLogId: string }>> {
   const { supabase, user } = await requireUser();
   if (!user) return { ok: false, error: "Not authenticated" };
+
+  // Bound free-text before persisting (the row is also reachable directly via
+  // the publishable key — caps are mirrored as DB CHECKs in 0005_security.sql).
+  const titleErr = tooLong(input.title ?? "", LIMITS.sessionTitle, "Title");
+  if (titleErr) return titleErr;
+  if (input.notes != null) {
+    const notesErr = tooLong(input.notes, LIMITS.notes, "Notes");
+    if (notesErr) return notesErr;
+  }
+  for (const b of input.blocks ?? []) {
+    const labelErr = tooLong(b.label ?? "", LIMITS.blockLabel, "Block label");
+    if (labelErr) return labelErr;
+  }
 
   const payload = {
     user_id: user.id,
@@ -237,7 +326,13 @@ export async function updateSession(
 
   const fields: Record<string, unknown> = {};
   if (patch.rpe !== undefined) fields.rpe = patch.rpe;
-  if (patch.notes !== undefined) fields.notes = patch.notes;
+  if (patch.notes !== undefined) {
+    if (patch.notes != null) {
+      const notesErr = tooLong(patch.notes, LIMITS.notes, "Notes");
+      if (notesErr) return notesErr;
+    }
+    fields.notes = patch.notes;
+  }
   if (patch.durationMin !== undefined) fields.duration_min = patch.durationMin;
   if (Object.keys(fields).length === 0) return { ok: true };
 
@@ -279,34 +374,18 @@ export async function toggleBlock(id: string, done: boolean): Promise<ActionResu
  */
 async function awardCompletionRewards(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
+  // Retained for call-site compatibility; the definer fn derives the user from
+  // auth.uid() and only ever writes that row.
+  _userId: string,
 ): Promise<void> {
   try {
-    const { data: completed } = await supabase
-      .from("session_logs")
-      .select("date")
-      .eq("user_id", userId)
-      .eq("completed", true)
-      .order("date", { ascending: false });
-
-    const rows = (completed ?? []) as Array<{ date: string }>;
-    const xp = rows.length * 50;
-
-    // Level rolls when xp >= level*250 (cumulative): L1 needs 250 to reach L2,
-    // L2 needs another 500, etc. Loop to absorb multiple level-ups at once.
-    let level = 1;
-    let remaining = xp;
-    while (remaining >= level * 250) {
-      remaining -= level * 250;
-      level += 1;
-    }
-
-    const streak = consecutiveDayStreak(rows.map((r) => r.date));
-
-    await supabase
-      .from("profiles")
-      .update({ xp, level, streak_count: streak })
-      .eq("id", userId);
+    // xp/level/streak_count are no longer client-updatable (column UPDATE
+    // revoked from anon/authenticated in migration 0003, so a direct REST PATCH
+    // cannot fabricate leaderboard stats). recompute_my_stats() is a SECURITY
+    // DEFINER fn that recomputes from the caller's own completed sessions using
+    // the identical xp = 50*n / level-roll / consecutive-day-streak formula and
+    // writes only the caller's row — same logic, on the trusted side.
+    await supabase.rpc("recompute_my_stats");
   } catch {
     // best-effort: never block the primary mutation
   }
@@ -405,27 +484,24 @@ export async function createCrew(
 
   const name = input.name?.trim();
   if (!name) return { ok: false, error: "Crew name is required" };
+  const nameErr = tooLong(name, LIMITS.crewName, "Crew name");
+  if (nameErr) return nameErr;
 
-  // 1. Create the crew (invite_code defaults in the DB).
-  const crewInsert: Record<string, unknown> = { name, created_by: user.id };
-  if (input.weeklyGoal != null) crewInsert.weekly_goal = Math.max(1, Math.round(input.weeklyGoal));
+  // Crew + owner membership + active-crew pointer are created atomically inside
+  // a SECURITY DEFINER fn (create_crew). Direct client INSERTs into crew_members
+  // are no longer permitted — default-deny, see migration 0003 — so the owner
+  // row MUST be created server-side; the fn also forces role='owner' so it can
+  // never be client-selected. The DB still defaults invite_code/weekly_goal.
+  const weeklyGoal =
+    input.weeklyGoal != null ? Math.max(1, Math.round(input.weeklyGoal)) : null;
 
-  const { data: crew, error: crewErr } = await supabase
-    .from("crews")
-    .insert(crewInsert)
-    .select("id")
-    .single();
-  if (crewErr || !crew) return { ok: false, error: crewErr?.message ?? "Could not create crew" };
-  const crewId = crew.id as string;
-
-  // 2. Add the creator as the owner member.
-  const { error: memErr } = await supabase
-    .from("crew_members")
-    .insert({ crew_id: crewId, user_id: user.id, role: "owner" });
-  if (memErr) return { ok: false, error: memErr.message };
-
-  // 3. Point the profile at the new crew.
-  await supabase.from("profiles").update({ active_crew_id: crewId }).eq("id", user.id);
+  const { data, error } = await supabase.rpc("create_crew", {
+    p_name: name,
+    p_weekly_goal: weeklyGoal,
+  });
+  if (error) return { ok: false, error: error.message };
+  const crewId = (data as string | null) ?? null;
+  if (!crewId) return { ok: false, error: "Could not create crew" };
 
   revalidatePath("/crew");
   revalidatePath("/today");
@@ -533,6 +609,8 @@ export async function editCrew(
   if (patch.name !== undefined) {
     const name = patch.name.trim();
     if (!name) return { ok: false, error: "Crew name is required" };
+    const nameErr = tooLong(name, LIMITS.crewName, "Crew name");
+    if (nameErr) return nameErr;
     fields.name = name;
   }
   if (patch.weeklyGoal !== undefined) fields.weekly_goal = Math.max(1, Math.round(patch.weeklyGoal));
@@ -636,6 +714,11 @@ export async function postNote(crewId: string, body: string): Promise<ActionResu
   const text = body?.trim();
   if (!text) return { ok: false, error: "Say something first" };
   if (!crewId) return { ok: false, error: "No crew selected" };
+  // Cap note length server-side: the 280-char limit was only the textarea's
+  // client maxLength, bypassable by calling this action (or the feed_posts
+  // table) directly — without this a crew-mate could flood the shared feed.
+  const bodyErr = tooLong(text, LIMITS.noteBody, "Note");
+  if (bodyErr) return bodyErr;
 
   const { error } = await supabase.from("feed_posts").insert({
     user_id: user.id,
@@ -654,12 +737,73 @@ export async function nudge(toUser: string, crewId?: string | null): Promise<Act
   const { supabase, user } = await requireUser();
   if (!user) return { ok: false, error: "Not authenticated" };
 
+  // crew_id is client-supplied. Don't persist a crew the sender isn't in:
+  // validate sender membership here (clean error). The DB backstop in
+  // 0003_security.sql is the nudges_insert WITH CHECK, which is stricter still —
+  // it requires crew_id to be null OR a crew BOTH sender and recipient belong to
+  // — so the direct-to-PostgREST path is constrained even without this. The
+  // membership read is RLS-scoped (crew_members_select): a visible row == member.
+  const crew = crewId ?? null;
+  if (crew) {
+    const { data: membership } = await supabase
+      .from("crew_members")
+      .select("crew_id")
+      .eq("crew_id", crew)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!membership) return { ok: false, error: "Not a member of that crew" };
+  }
+
+  // Don't nudge yourself.
+  if (toUser === user.id) return { ok: false, error: "You can't nudge yourself" };
+
+  // Server-side abuse throttle (defense-in-depth alongside the RLS WITH CHECK +
+  // partial-unique index added in 0006_rate_limit.sql). Without this, a malicious
+  // crew-mate could spam a target with thousands of nudges (notification
+  // harassment / DB bloat). Two layers, both also enforced at the table:
+  //   • one outstanding UNSEEN nudge per (sender → target) — collapse dupes
+  //   • at most NUDGE_RATE_MAX nudges to one target per NUDGE_RATE_WINDOW
+  // We check here too so abusers get a clean message instead of a raw DB error,
+  // and so the throttle holds even if the policy is ever relaxed.
+  const NUDGE_RATE_MAX = 5;
+  const NUDGE_RATE_WINDOW_MS = 10 * 60 * 1000; // keep in sync with 0006
+  const windowStart = new Date(Date.now() - NUDGE_RATE_WINDOW_MS).toISOString();
+
+  // Already an unseen nudge waiting? Treat as a no-op success — the target is
+  // already poked, and the unique index would otherwise reject a duplicate.
+  const { data: pending } = await supabase
+    .from("nudges")
+    .select("id")
+    .eq("from_user", user.id)
+    .eq("to_user", toUser)
+    .eq("seen", false)
+    .maybeSingle();
+  if (pending) return { ok: true };
+
+  const { count: recentCount } = await supabase
+    .from("nudges")
+    .select("id", { count: "exact", head: true })
+    .eq("from_user", user.id)
+    .eq("to_user", toUser)
+    .gte("created_at", windowStart);
+  if ((recentCount ?? 0) >= NUDGE_RATE_MAX) {
+    return { ok: false, error: "You've nudged them plenty for now — give it a bit." };
+  }
+
   const { error } = await supabase.from("nudges").insert({
     from_user: user.id,
     to_user: toUser,
-    crew_id: crewId ?? null,
+    crew_id: crew,
   });
-  if (error) return { ok: false, error: error.message };
+  if (error) {
+    // 23505 = duplicate unseen nudge raced past the pre-check (collapse it);
+    // 42501 = RLS WITH CHECK rejected it (rate cap reached under the DB clock).
+    if (error.code === "23505") return { ok: true };
+    if (error.code === "42501") {
+      return { ok: false, error: "You've nudged them plenty for now — give it a bit." };
+    }
+    return { ok: false, error: error.message };
+  }
 
   revalidatePath("/crew");
   return { ok: true };
@@ -699,6 +843,12 @@ export async function logPR(input: LogPRInput): Promise<ActionResult<{ prId: str
 
   const label = input.label?.trim();
   if (!label) return { ok: false, error: "PR label is required" };
+  const labelErr = tooLong(label, LIMITS.prLabel, "PR label");
+  if (labelErr) return labelErr;
+  if (input.unit != null) {
+    const unitErr = tooLong(input.unit, LIMITS.unit, "Unit");
+    if (unitErr) return unitErr;
+  }
   if (input.value == null || Number.isNaN(input.value)) {
     return { ok: false, error: "PR value is required" };
   }
@@ -749,13 +899,21 @@ export async function updatePR(id: string, patch: UpdatePRInput): Promise<Action
   if (patch.label !== undefined) {
     const label = patch.label.trim();
     if (!label) return { ok: false, error: "PR label is required" };
+    const labelErr = tooLong(label, LIMITS.prLabel, "PR label");
+    if (labelErr) return labelErr;
     fields.label = label;
   }
   if (patch.value !== undefined) {
     if (Number.isNaN(patch.value)) return { ok: false, error: "PR value is invalid" };
     fields.value = patch.value;
   }
-  if (patch.unit !== undefined) fields.unit = patch.unit;
+  if (patch.unit !== undefined) {
+    if (patch.unit != null) {
+      const unitErr = tooLong(patch.unit, LIMITS.unit, "Unit");
+      if (unitErr) return unitErr;
+    }
+    fields.unit = patch.unit;
+  }
   if (patch.achievedOn !== undefined) fields.achieved_on = patch.achievedOn;
   if (Object.keys(fields).length === 0) return { ok: true };
 
@@ -835,6 +993,11 @@ export async function logMeal(input: LogMealInput): Promise<ActionResult> {
   const { supabase, user } = await requireUser();
   if (!user) return { ok: false, error: "Not authenticated" };
 
+  if (input.meal != null) {
+    const mealErr = tooLong(input.meal, LIMITS.mealName, "Meal");
+    if (mealErr) return mealErr;
+  }
+
   const { error } = await supabase.from("nutrition_logs").insert({
     user_id: user.id,
     date: input.date ?? todayISO(),
@@ -864,7 +1027,13 @@ export async function updateMeal(id: string, patch: UpdateMealInput): Promise<Ac
   if (!user) return { ok: false, error: "Not authenticated" };
 
   const fields: Record<string, unknown> = {};
-  if (patch.meal !== undefined) fields.meal = patch.meal;
+  if (patch.meal !== undefined) {
+    if (patch.meal != null) {
+      const mealErr = tooLong(patch.meal, LIMITS.mealName, "Meal");
+      if (mealErr) return mealErr;
+    }
+    fields.meal = patch.meal;
+  }
   if (patch.kcal !== undefined) fields.kcal = patch.kcal;
   if (patch.protein !== undefined) fields.protein = patch.protein;
   if (patch.carbs !== undefined) fields.carbs = patch.carbs;
@@ -973,9 +1142,22 @@ export async function updateProfile(input: UpdateProfileInput): Promise<ActionRe
   if (input.display_name !== undefined) {
     const name = input.display_name.trim();
     if (!name) return { ok: false, error: "Display name is required" };
+    const nameErr = tooLong(name, LIMITS.displayName, "Display name");
+    if (nameErr) return nameErr;
     fields.display_name = name;
   }
-  if (input.avatar_url !== undefined) fields.avatar_url = input.avatar_url;
+  if (input.avatar_url !== undefined) {
+    if (input.avatar_url != null) {
+      const urlErr = tooLong(input.avatar_url, LIMITS.avatarUrl, "Avatar URL");
+      if (urlErr) return urlErr;
+    }
+    // Enforce an https-only scheme (rejects javascript:/data:/blob:/non-http
+    // and malformed URLs). Blank/null clears the avatar. The canonicalized
+    // value is what we persist.
+    const avatar = normalizeAvatarUrl(input.avatar_url);
+    if ("error" in avatar) return { ok: false, error: avatar.error };
+    fields.avatar_url = avatar.value;
+  }
   if (Object.keys(fields).length === 0) return { ok: true };
 
   const { error } = await supabase.from("profiles").update(fields).eq("id", user.id);

@@ -83,6 +83,36 @@ export function formatVolume(ml: number | null | undefined, units: Units): strin
   return `${round(ml / ML_PER_L, 2)} L`;
 }
 
+// ── URL safety ───────────────────────────────────────────────────────────
+/**
+ * Validate a user-supplied "MTNTOUGH video" URL before it is stored or
+ * rendered as an anchor href. Returns the trimmed URL only when it is an
+ * https:// link to mtntough.com; otherwise returns null.
+ *
+ * This is the single source of truth for video-link safety. It rejects
+ * dangerous schemes (javascript:, data:, vbscript:, etc.) that would
+ * otherwise become stored XSS when the value is later rendered as an href,
+ * and keeps the product constraint that videos live on mtntough.com.
+ * Call it everywhere a `video_url` / `default_video_url` is written, and
+ * defensively when rendering values that may predate this check.
+ */
+export function validateVideoUrl(value: string | null | undefined): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (trimmed === "") return null;
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    return null;
+  }
+  // Only https is allowed — this excludes javascript:, data:, http:, etc.
+  if (url.protocol !== "https:") return null;
+  const host = url.host.toLowerCase();
+  if (host !== "mtntough.com" && !host.endsWith(".mtntough.com")) return null;
+  return trimmed;
+}
+
 // ── Date helpers ─────────────────────────────────────────────────────────
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 const WEEKDAYS_LONG = [

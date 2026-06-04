@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { validateVideoUrl } from "@/lib/format";
 import { revalidatePath } from "next/cache";
 import {
   DayEditor,
@@ -15,7 +16,8 @@ import {
 /* ════════════════════════════════════════════════════════════════════
    DAY EDITOR (/programs/[id]/days/[dayId]) — gaps 2, 7.
    Edit the day's fields (title / phase / week / day / est_minutes) and an
-   "MTNTOUGH video URL" (validated to contain mtntough.com). Below: a block
+   "MTNTOUGH video URL" (validated to be an https:// mtntough.com URL via
+   validateVideoUrl — exact host match, not substring). Below: a block
    list with CRUD + drag-reorder, and within each block an exercise-row list
    where each row can pick from the reusable library (sets exercise_id +
    name) or type a custom name, plus sets / reps / load / distance / time /
@@ -82,16 +84,15 @@ async function updateDay(
   const title = input.title.trim();
   if (!title) return { ok: false, error: "Title is required." };
 
-  const video = clean(input.videoUrl);
-  if (video) {
-    let host = "";
-    try {
-      host = new URL(video).host.toLowerCase();
-    } catch {
-      return { ok: false, error: "Enter a valid URL (https://…)." };
-    }
-    if (!host.includes("mtntough.com")) {
-      return { ok: false, error: "Video link should be an mtntough.com URL." };
+  const rawVideo = clean(input.videoUrl);
+  let video: string | null = null;
+  if (rawVideo) {
+    video = validateVideoUrl(rawVideo);
+    if (!video) {
+      return {
+        ok: false,
+        error: "Video link must be an https:// mtntough.com URL.",
+      };
     }
   }
 

@@ -25,6 +25,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { Card, SectionHeader } from "@/components/ui";
+import { validateVideoUrl } from "@/lib/format";
 
 /* ── shared shapes (kept local so the file is self-contained) ─────────── */
 export type BlockType =
@@ -310,13 +311,19 @@ export function DayEditor(props: DayEditorProps) {
 }
 
 function ReadOnlyDayNote({ day }: { day: DayData }) {
+  // This renders a PUBLIC program's day for any signed-in viewer (cross-user),
+  // so re-validate before using video_url as an href. Without this a poisoned
+  // value (e.g. a javascript: URL written directly via PostgREST before the
+  // 0007 DB CHECK is applied) would be stored XSS against every viewer. Only an
+  // https://mtntough.com link survives; anything else shows "No video linked".
+  const safeVideoUrl = validateVideoUrl(day.video_url);
   return (
     <Card className="mb-1 mt-2 p-4">
       <div className="space-y-1.5 text-[13px] text-muted">
         {day.est_minutes ? <div>~{day.est_minutes} min</div> : null}
-        {day.video_url ? (
+        {safeVideoUrl ? (
           <a
-            href={day.video_url}
+            href={safeVideoUrl}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 text-gold underline-offset-2 hover:underline"

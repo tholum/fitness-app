@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { validateVideoUrl } from "@/lib/format";
 import { SectionHeader } from "@/components/ui";
 import {
   ImportPanel,
@@ -90,7 +91,10 @@ async function importProgram(
         day: asInt(d.day, di + 1),
         title: asStr(d.title, `Day ${di + 1}`),
         est_minutes: asIntOrNull(d.est_minutes),
-        video_url: clean(d.video_url),
+        // Stored XSS hardening: only accept https:// mtntough.com links.
+        // Anything else (javascript:, data:, http:, other hosts) is dropped
+        // to null so it can never be rendered as a dangerous anchor href.
+        video_url: validateVideoUrl(d.video_url),
         order: asInt(d.order, di),
       })
       .select("id")

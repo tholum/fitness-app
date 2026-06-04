@@ -8,6 +8,7 @@ import {
   resolveTodayDay,
 } from "@/lib/queries";
 import { StatPill } from "@/components/ui";
+import { validateVideoUrl } from "@/lib/format";
 import type {
   BlockType,
   Json,
@@ -163,6 +164,12 @@ export default async function CheckinPage() {
       }));
     }
   }
+
+  // Re-validate before the value is rendered as the "Watch on MTNTOUGH" href
+  // (WatchButton). The 0007 DB CHECK already bounds new writes; this also covers
+  // any value predating that migration. Only an https://mtntough.com link
+  // survives — anything else (e.g. a javascript: URL) becomes null (no button).
+  videoUrl = validateVideoUrl(videoUrl);
 
   const description = videoUrl
     ? "Follow along on the MTNTOUGH video, then tick off each block as you finish."
