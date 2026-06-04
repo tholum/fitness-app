@@ -4,6 +4,7 @@ import { BottomNav } from "@/components/BottomNav";
 import {
   ThemeProvider,
   normalizeAppearance,
+  featureFlagScript,
   DEFAULT_APPEARANCE,
 } from "@/components/ThemeProvider";
 
@@ -39,11 +40,22 @@ export default async function AppLayout({
 
   return (
     <ThemeProvider userId={user.id} initial={appearance}>
+      {/* No-flash: set the feature-flag attributes on <html> before paint so a
+          user who disabled a feature never sees it flash on during hydration. */}
+      <script
+        dangerouslySetInnerHTML={{ __html: featureFlagScript(appearance) }}
+      />
       <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col bg-bg">
-        {/* Warm glow accents, mirroring the prototype's phone bezel lighting. */}
+        {/* Keyboard skip link: first focusable element, jumps past the nav. */}
+        <a href="#main" className="skip-link">
+          Skip to content
+        </a>
+
+        {/* Warm glow accents + contour texture (Appearance → Topographic
+            texture; .topo-texture is hidden when [data-topo="off"]). */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -left-16 -top-24 z-0 h-72 w-72 rounded-full blur-[45px]"
+          className="topo-texture pointer-events-none absolute -left-16 -top-24 z-0 h-72 w-72 rounded-full blur-[45px]"
           style={{
             background:
               "radial-gradient(circle, rgba(200,98,45,.30), transparent 70%)",
@@ -51,7 +63,7 @@ export default async function AppLayout({
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-20 bottom-16 z-0 h-80 w-80 rounded-full blur-[55px]"
+          className="topo-texture pointer-events-none absolute -right-20 bottom-16 z-0 h-80 w-80 rounded-full blur-[55px]"
           style={{
             background:
               "radial-gradient(circle, rgba(122,139,82,.20), transparent 70%)",
@@ -61,7 +73,7 @@ export default async function AppLayout({
         {/* Topographic contour texture behind every screen. */}
         <svg
           aria-hidden
-          className="pointer-events-none absolute inset-0 z-0 h-full w-full opacity-[0.05]"
+          className="topo-texture pointer-events-none absolute inset-0 z-0 h-full w-full opacity-[0.05]"
           viewBox="0 0 390 844"
           preserveAspectRatio="none"
         >
@@ -75,7 +87,11 @@ export default async function AppLayout({
         </svg>
 
         {/* Scrollable screen content; space at the bottom for the nav. */}
-        <main className="no-scrollbar relative z-10 flex-1 overflow-y-auto px-[18px] pb-[100px] pt-2">
+        <main
+          id="main"
+          tabIndex={-1}
+          className="no-scrollbar relative z-10 flex-1 overflow-y-auto px-[18px] pb-[100px] pt-2 outline-none"
+        >
           {children}
         </main>
 

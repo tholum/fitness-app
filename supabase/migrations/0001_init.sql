@@ -31,26 +31,12 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- ── CREW MEMBERSHIP HELPERS (SECURITY DEFINER → no recursive RLS) ───────
-create or replace function public.shares_crew(target uuid)
-returns boolean language sql security definer stable set search_path = public as $$
-  select exists (
-    select 1
-    from public.crew_members a
-    join public.crew_members b on a.crew_id = b.crew_id
-    where a.user_id = auth.uid() and b.user_id = target
-  );
-$$;
-
-create or replace function public.is_crew_member(c uuid)
-returns boolean language sql security definer stable set search_path = public as $$
-  select exists (
-    select 1 from public.crew_members
-    where crew_id = c and user_id = auth.uid()
-  );
-$$;
-
 -- ── CREWS ───────────────────────────────────────────────────────────────
+-- NOTE: crews + crew_members MUST be created before the crew-membership
+-- helpers below. Those helpers are LANGUAGE sql, so their bodies are parsed
+-- and analyzed at CREATE FUNCTION time (check_function_bodies = on, the
+-- Supabase default); the referenced table must already exist or the whole
+-- migration aborts on a clean db reset / push.
 create table public.crews (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
@@ -69,6 +55,25 @@ create table public.crew_members (
   primary key (crew_id, user_id)
 );
 alter table public.crew_members enable row level security;
+
+-- ── CREW MEMBERSHIP HELPERS (SECURITY DEFINER → no recursive RLS) ───────
+create or replace function public.shares_crew(target uuid)
+returns boolean language sql security definer stable set search_path = public as $$
+  select exists (
+    select 1
+    from public.crew_members a
+    join public.crew_members b on a.crew_id = b.crew_id
+    where a.user_id = auth.uid() and b.user_id = target
+  );
+$$;
+
+create or replace function public.is_crew_member(c uuid)
+returns boolean language sql security definer stable set search_path = public as $$
+  select exists (
+    select 1 from public.crew_members
+    where crew_id = c and user_id = auth.uid()
+  );
+$$;
 
 -- ── PROGRAM CONTENT (MTNTOUGH plans; uploaded on desktop) ───────────────
 create table public.programs (
@@ -326,8 +331,18 @@ create policy nudges_select on public.nudges for select
   using (to_user = auth.uid() or from_user = auth.uid());
 create policy nudges_insert on public.nudges for insert
   with check (from_user = auth.uid() and public.shares_crew(to_user));
+-- recipient may flip `seen`, but cannot rewrite from_user/crew_id (only `seen`
+-- is mutable). markNudgesSeen only ever sets seen=true, so this is unaffected.
 create policy nudges_update on public.nudges for update
-  using (to_user = auth.uid()) with check (to_user = auth.uid());
+  using (to_user = auth.uid())
+  with check (
+    to_user = auth.uid()
+    and from_user = (select n.from_user from public.nudges n where n.id = id)
+    and crew_id is not distinct from (select n.crew_id from public.nudges n where n.id = id)
+  );
+-- cleanup: either party may delete a nudge (recipient dismiss / sender retract).
+create policy nudges_delete on public.nudges for delete
+  using (to_user = auth.uid() or from_user = auth.uid());
 
 -- badges catalog: world-readable. user_badges: own + crew-mates.
 create policy badges_select on public.badges for select using (true);

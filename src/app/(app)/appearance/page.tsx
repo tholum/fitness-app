@@ -57,7 +57,6 @@ const HOME_CARDS: readonly HomeCardDef[] = [
   { key: "session", label: "Today's Session" },
   { key: "rings", label: "Activity Rings" },
   { key: "crew", label: "Crew Today" },
-  { key: "units", label: "Units" },
 ];
 const ALL_CARD_KEYS = HOME_CARDS.map((c) => c.key);
 
@@ -162,7 +161,7 @@ export default function AppearancePage() {
       <Card>
         <ToggleRow
           label="Crew & Social"
-          description="Leaderboard, feed, nudges, reactions"
+          description="Crew tab, feed, nudges, reactions"
           checked={appearance.crewSocial}
           onChange={(v) => setAppearance({ crewSocial: v })}
         />

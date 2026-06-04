@@ -280,6 +280,7 @@ export function ImportPanel({ importAction }: { importAction: ImportFn }) {
             ref={inputRef}
             type="file"
             accept="application/json,.json"
+            aria-label="Upload program .json file"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];

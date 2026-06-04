@@ -7,10 +7,13 @@ import type { ReactNode } from "react";
 /* ════════════════════════════════════════════════════════════════════
    BOTTOM NAV
    Fixed, blurred bar with the center [FAB Check-In] flanked by primary
-   destinations: Today · Crew · Programs · [FAB] · Body · Progress ·
-   Account. Programs (authoring) and Account (profile + sign-out) were
-   added so plan management and the session controls are reachable from
-   the nav (gaps 1,26,32). Active route highlights in the accent color.
+   destinations: Today · Crew · [FAB] · Body · Progress · Account.
+   This mirrors the BASECAMP prototype's airy 4+FAB rhythm (Today · Crew
+   · [FAB] · Body · Progress) and keeps Account as the one extra tab: it
+   is the only entry to profile + sign-out and doubles as the management
+   hub, surfacing Programs / Exercises / Appearance as quick links (so
+   plan authoring stays reachable without its own persistent tab — gaps
+   1,26,32). Active route highlights in the accent color.
    Ported from the BASECAMP prototype's <nav class="nav">.
    ════════════════════════════════════════════════════════════════════ */
 
@@ -18,6 +21,8 @@ interface NavItem {
   href: string;
   label: string;
   icon: ReactNode;
+  /** Extra classes on the link (e.g. a feature-gate class). */
+  className?: string;
 }
 
 /** Destinations left of the center FAB. */
@@ -34,20 +39,13 @@ const LEFT_ITEMS: NavItem[] = [
   {
     href: "/crew",
     label: "Crew",
+    // Hidden when Appearance → Crew & Social is off (see globals.css gate).
+    className: "crew-feature",
     icon: (
       <svg viewBox="0 0 24 24">
         <circle cx="9" cy="8" r="3" />
         <circle cx="17" cy="9" r="2.5" />
         <path d="M3 20v-1a5 5 0 015-5h2a5 5 0 015 5v1M15 14h1a4 4 0 014 4v2" />
-      </svg>
-    ),
-  },
-  {
-    href: "/programs",
-    label: "Plans",
-    icon: (
-      <svg viewBox="0 0 24 24">
-        <path d="M4 5h16M4 12h16M4 19h10" />
       </svg>
     ),
   },
@@ -96,8 +94,8 @@ function NavButton({ item, pathname }: { item: NavItem; pathname: string }) {
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={`flex flex-1 flex-col items-center gap-1 pt-3.5 font-cond text-[9px] font-semibold uppercase tracking-wide [&_svg]:h-[22px] [&_svg]:w-[22px] [&_svg]:fill-none [&_svg]:stroke-current [&_svg]:[stroke-width:1.9] ${
-        active ? "text-accent" : "text-faint"
-      }`}
+        active ? "text-nav-active" : "text-faint"
+      }${item.className ? ` ${item.className}` : ""}`}
     >
       {item.icon}
       {item.label}

@@ -420,10 +420,10 @@ export async function getProgress(userId?: string): Promise<Progress> {
         .order("earned_on", { ascending: false }),
       crewId
         ? supabase.from("crews").select("weekly_goal").eq("id", crewId).maybeSingle()
-        : Promise.resolve({ data: null }),
+        : Promise.resolve({ data: null as { weekly_goal: number } | null }),
     ]);
 
-  const weeklyGoal = (crew as { weekly_goal: number } | null)?.weekly_goal ?? 0;
+  const weeklyGoal = crew?.weekly_goal ?? 0;
 
   return {
     level: profile?.level ?? 1,

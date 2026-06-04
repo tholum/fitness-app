@@ -251,15 +251,21 @@ export default async function ProgressPage() {
         </div>
       </div>
 
-      <LevelCard progress={progress} />
+      {/* Level / XP — gamification (hidden when that toggle is off). */}
+      <div className="gamify-feature">
+        <LevelCard progress={progress} />
+      </div>
 
       <SectionHeader action={<span className="text-accent2">▲ this phase</span>}>
         Sessions Completed
       </SectionHeader>
       <SessionsChart bars={bars} />
 
-      <SectionHeader action={`${earnedCount} / ${totalBadges}`}>Badges</SectionHeader>
-      <BadgeShelf earned={progress.badges} catalog={catalog} />
+      {/* Badges — gamification (hidden when that toggle is off). */}
+      <div className="gamify-feature">
+        <SectionHeader action={`${earnedCount} / ${totalBadges}`}>Badges</SectionHeader>
+        <BadgeShelf earned={progress.badges} catalog={catalog} />
+      </div>
 
       {/* Personal Records (+ optional recent-session history). Interactive
           client island — add/edit/delete PRs and edit/uncomplete/delete

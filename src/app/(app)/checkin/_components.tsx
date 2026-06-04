@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { Card, SectionHeader, Toggle } from "@/components/ui";
+import { useHaptics } from "@/components/ThemeProvider";
 import { completeSession, toggleBlock, markNudgesSeen } from "@/lib/actions";
 import type { BlockType, Json, Units } from "@/lib/types";
 
@@ -205,10 +206,13 @@ function MiniField({
 /* ── Round check toggle (the prototype's .check / .check.done) ───────── */
 
 function CheckCircle({
+  label,
   done,
   busy,
   onClick,
 }: {
+  /** Block label, used to give this icon-only checkbox an accessible name. */
+  label: string;
   done: boolean;
   busy: boolean;
   onClick: () => void;
@@ -218,6 +222,7 @@ function CheckCircle({
       type="button"
       role="checkbox"
       aria-checked={done}
+      aria-label={`Mark ${label} complete`}
       onClick={onClick}
       disabled={busy}
       className={`flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-150 ${
@@ -323,6 +328,7 @@ export function CheckinClient({
   blocks: initialBlocks,
 }: CheckinClientProps) {
   const router = useRouter();
+  const buzz = useHaptics();
   const [blocks, setBlocks] = useState<CheckinBlock[]>(initialBlocks);
   const [drafts, setDrafts] = useState<BlockDraft[]>(() =>
     initialBlocks.map((b) => draftFromPayload(b.payload)),
@@ -377,6 +383,9 @@ export function CheckinClient({
     setErrorMsg(null);
     const block = blocks[index];
     const nextDone = !block.done;
+
+    // Light haptic tick when checking a block off (Appearance → Haptics).
+    if (nextDone) buzz(12);
 
     // Optimistic local update.
     setBlocks((prev) =>
@@ -443,6 +452,8 @@ export function CheckinClient({
         setErrorMsg(res.error ?? "Couldn't complete the session.");
         return;
       }
+      // Celebratory buzz on a successful check-in (Appearance → Haptics).
+      buzz([18, 40, 28]);
       setComplete(true);
       router.push("/today");
       router.refresh();
@@ -512,6 +523,7 @@ export function CheckinClient({
                 </div>
 
                 <CheckCircle
+                  label={block.label}
                   done={block.done}
                   busy={busy}
                   onClick={() => handleToggle(index)}

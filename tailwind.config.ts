@@ -22,6 +22,7 @@ const config: Config = {
         faint: "var(--faint)",
         accent: "var(--accent)",
         accent2: "var(--accent2)",
+        "nav-active": "var(--nav-active)",
         gold: "var(--gold)",
         danger: "var(--danger)",
       },

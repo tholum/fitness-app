@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import Link from "next/link";
 
 import { Card, Ring, SectionHeader, StatPill } from "@/components/ui";
+import { normalizeAppearance } from "@/components/ThemeProvider";
 import {
   getProfile,
   getTodaySession,
@@ -23,6 +24,11 @@ import { NudgeInbox } from "../checkin/_components";
    branch renders a graceful empty state so a fresh, unenrolled account
    still looks intentional, and the empty-state CTAs route to /programs so
    the user can pick or build a plan.
+
+   The three home cards (session hero, rings, crew strip) honor the user's
+   appearance.widgets preference from Appearance → Home Cards: they render
+   in the saved order and disabled cards are omitted. The header, nudge
+   inbox, and primary CTA are fixed chrome (not reorderable cards).
    ════════════════════════════════════════════════════════════════════ */
 
 export const dynamic = "force-dynamic";
@@ -82,6 +88,10 @@ export default async function TodayPage() {
   const day = today?.day ?? null;
   const hasEnrollment = Boolean(enrollment);
 
+  // Home-card layout: which cards show on Today and in what order, per the
+  // user's Appearance → Home Cards preference (profiles.appearance.widgets).
+  const widgetOrder = normalizeAppearance(profile?.appearance).widgets;
+
   // ── Hero copy ─────────────────────────────────────────────────────────
   // A scheduled day comes from the active enrollment; a started/completed
   // session may exist for today too. Show the hero whenever either exists.
@@ -134,7 +144,8 @@ export default async function TodayPage() {
           </h1>
         </div>
         <div className="flex items-center gap-2.5">
-          <StatPill>🔥 {streak}</StatPill>
+          {/* Streak pill — gamification (hidden when that toggle is off). */}
+          <StatPill className="gamify-feature">🔥 {streak}</StatPill>
           <Link
             href="/appearance"
             aria-label="Appearance settings"
@@ -151,170 +162,202 @@ export default async function TodayPage() {
         </div>
       </header>
 
-      {/* ── Incoming nudges (cooperative; marks them seen on view) ───────── */}
-      <NudgeInbox
-        nudges={nudges.map((n) => ({
-          id: n.id,
-          fromName: n.fromName,
-          createdAt: n.created_at,
-          seen: n.seen,
-        }))}
-        unseenCount={unseenNudges}
-      />
-
-      {/* ── Hero session card (blaze → gold) ────────────────────────────── */}
-      <section className="relative z-10 mb-3.5 overflow-hidden rounded-[26px] bg-grad p-5 text-bg">
-        {/* soft corner highlight */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-10 -top-10 h-[170px] w-[170px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(255,255,255,.28), transparent 70%)",
-          }}
-        />
-        {/* ridge silhouette */}
-        <svg
-          aria-hidden
-          className="pointer-events-none absolute bottom-0 left-0 right-0 opacity-[0.18]"
-          viewBox="0 0 390 100"
-          preserveAspectRatio="none"
-        >
-          <polygon
-            points="0,100 0,60 80,30 150,55 230,20 320,50 390,30 390,100"
-            fill="#1c1a17"
-          />
-        </svg>
-
-        <div className="relative z-10">
-          <div className="font-cond text-[11px] font-bold uppercase tracking-[2px] opacity-80">
-            Today&apos;s Session{eyebrowSource ? ` · ${eyebrowSource}` : ""}
-          </div>
-          <h2 className="my-1 mt-2 font-display text-2xl font-bold uppercase leading-[1.05] tracking-wide">
-            {sessionTitle}
-          </h2>
-
-          {hasSession ? (
-            <>
-              <div className="text-[13px] font-semibold opacity-85">
-                {heroMeta || "Session ready"}
-              </div>
-              <div className="mt-4 flex gap-2.5">
-                <a
-                  href={videoUrl ?? "https://mtntough.com"}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={`flex flex-1 items-center justify-center gap-[7px] rounded-[14px] bg-[#1c1a17] p-[13px] font-display text-[13px] font-semibold uppercase tracking-wide text-[#ece6da] ${
-                    videoUrl ? "" : "opacity-70"
-                  }`}
-                >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                  Watch on MTNTOUGH
-                </a>
-                <Link
-                  href="/checkin"
-                  className="flex flex-1 items-center justify-center gap-[7px] rounded-[14px] border-[1.5px] border-[rgba(28,26,23,.4)] bg-[rgba(28,26,23,.15)] p-[13px] font-display text-[13px] font-semibold uppercase tracking-wide text-bg"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-4 w-4 fill-none stroke-current [stroke-width:3]"
-                  >
-                    <path d="M5 13l4 4L19 7" />
-                  </svg>
-                  Check In
-                </Link>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="text-[13px] font-semibold opacity-85">
-                No active program — browse programs to start training.
-              </div>
-              <div className="mt-4">
-                <Link
-                  href="/programs"
-                  className="inline-flex items-center justify-center gap-[7px] rounded-[14px] bg-[#1c1a17] px-4 p-[13px] font-display text-[13px] font-semibold uppercase tracking-wide text-[#ece6da]"
-                >
-                  Browse programs
-                </Link>
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* ── Activity rings ──────────────────────────────────────────────── */}
-      <div className="relative z-10 mb-3.5 flex gap-3">
-        <RingCard
-          value={sessionRingValue}
-          color="var(--accent)"
-          centerLabel={null}
-          valueCaption={sessionRingLabel}
-          label="Session"
-        />
-        <RingCard
-          value={fuelRingValue}
-          color="var(--accent2)"
-          centerLabel={null}
-          valueCaption={pct(fuelRingValue)}
-          label="Fuel"
-        />
-        <RingCard
-          value={waterRingValue}
-          color="var(--gold)"
-          centerLabel={null}
-          valueCaption={pct(waterRingValue)}
-          label="Water"
+      {/* ── Incoming nudges (cooperative; marks them seen on view) ─────────
+          Crew & Social feature — hidden when that toggle is off. */}
+      <div className="crew-feature">
+        <NudgeInbox
+          nudges={nudges.map((n) => ({
+            id: n.id,
+            fromName: n.fromName,
+            createdAt: n.created_at,
+            seen: n.seen,
+          }))}
+          unseenCount={unseenNudges}
         />
       </div>
 
-      {/* ── Crew · Today strip ──────────────────────────────────────────── */}
-      <SectionHeader action={<Link href="/crew">Open Crew →</Link>}>
-        Crew · Today
-      </SectionHeader>
-
-      {crew.totalCount > 0 ? (
-        <Link href="/crew" className="block">
-          <Card className="mb-2.5 flex items-center gap-2.5 p-3.5">
-            <div className="flex">
-              {crew.members.slice(0, 4).map((m, i) => (
-                <span
-                  key={m.user_id}
-                  className="flex h-[38px] w-[38px] items-center justify-center rounded-full border-2 border-bg font-display text-sm font-bold text-bg"
+      {/* ── Home cards (order + visibility from appearance.widgets) ──────── */}
+      {widgetOrder.map((key) => {
+        switch (key) {
+          /* ── Hero session card (blaze → gold) ───────────────────────── */
+          case "session":
+            return (
+              <section
+                key="session"
+                className="relative z-10 mb-3.5 overflow-hidden rounded-[26px] bg-grad p-5 text-bg"
+              >
+                {/* soft corner highlight */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -right-10 -top-10 h-[170px] w-[170px]"
                   style={{
-                    background: avatarColor(m.user_id || m.display_name),
-                    marginRight: i < Math.min(crew.members.length, 4) - 1 ? -10 : 0,
+                    background:
+                      "radial-gradient(circle, rgba(255,255,255,.28), transparent 70%)",
                   }}
+                />
+                {/* ridge silhouette */}
+                <svg
+                  aria-hidden
+                  className="pointer-events-none absolute bottom-0 left-0 right-0 opacity-[0.18]"
+                  viewBox="0 0 390 100"
+                  preserveAspectRatio="none"
                 >
-                  {initials(m.display_name)}
-                </span>
-              ))}
-            </div>
-            <div className="flex-1 text-[13px] text-muted">
-              <b className="font-display text-text">
-                {crew.trainedCount} of {crew.totalCount}
-              </b>{" "}
-              crew trained today
-            </div>
-            <span className="font-display text-gold">›</span>
-          </Card>
-        </Link>
-      ) : (
-        <Card className="mb-2.5 flex items-center gap-3 p-3.5">
-          <div className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-line bg-surface2 text-base">
-            👋
-          </div>
-          <div className="flex-1 text-[13px] text-muted">
-            No crew yet — <span className="text-text">join or start one</span> to
-            train together.
-          </div>
-          <Link href="/crew" className="font-display text-gold">
-            ›
-          </Link>
-        </Card>
-      )}
+                  <polygon
+                    points="0,100 0,60 80,30 150,55 230,20 320,50 390,30 390,100"
+                    fill="#1c1a17"
+                  />
+                </svg>
+
+                <div className="relative z-10">
+                  <div className="font-cond text-[11px] font-bold uppercase tracking-[2px] opacity-80">
+                    Today&apos;s Session{eyebrowSource ? ` · ${eyebrowSource}` : ""}
+                  </div>
+                  <h2 className="my-1 mt-2 font-display text-2xl font-bold uppercase leading-[1.05] tracking-wide">
+                    {sessionTitle}
+                  </h2>
+
+                  {hasSession ? (
+                    <>
+                      <div className="text-[13px] font-semibold opacity-85">
+                        {heroMeta || "Session ready"}
+                      </div>
+                      <div className="mt-4 flex gap-2.5">
+                        <a
+                          href={videoUrl ?? "https://mtntough.com"}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`flex flex-1 items-center justify-center gap-[7px] rounded-[14px] bg-bg p-[13px] font-display text-[13px] font-semibold uppercase tracking-wide text-text ${
+                            videoUrl ? "" : "opacity-70"
+                          }`}
+                        >
+                          <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                          Watch on MTNTOUGH
+                        </a>
+                        <Link
+                          href="/checkin"
+                          className="flex flex-1 items-center justify-center gap-[7px] rounded-[14px] border-[1.5px] border-[rgba(28,26,23,.4)] bg-[rgba(28,26,23,.15)] p-[13px] font-display text-[13px] font-semibold uppercase tracking-wide text-bg"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            className="h-4 w-4 fill-none stroke-current [stroke-width:3]"
+                          >
+                            <path d="M5 13l4 4L19 7" />
+                          </svg>
+                          Check In
+                        </Link>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-[13px] font-semibold opacity-85">
+                        No active program — browse programs to start training.
+                      </div>
+                      <div className="mt-4">
+                        <Link
+                          href="/programs"
+                          className="inline-flex items-center justify-center gap-[7px] rounded-[14px] bg-bg px-4 p-[13px] font-display text-[13px] font-semibold uppercase tracking-wide text-text"
+                        >
+                          Browse programs
+                        </Link>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </section>
+            );
+
+          /* ── Activity rings ───────────────────────────────────────────
+             Gamification surface — hidden when that toggle is off. */
+          case "rings":
+            return (
+              <div
+                key="rings"
+                className="gamify-feature relative z-10 mb-3.5 flex gap-3"
+              >
+                <RingCard
+                  value={sessionRingValue}
+                  color="var(--accent)"
+                  centerLabel={null}
+                  valueCaption={sessionRingLabel}
+                  label="Session"
+                />
+                <RingCard
+                  value={fuelRingValue}
+                  color="var(--accent2)"
+                  centerLabel={null}
+                  valueCaption={pct(fuelRingValue)}
+                  label="Fuel"
+                />
+                <RingCard
+                  value={waterRingValue}
+                  color="var(--gold)"
+                  centerLabel={null}
+                  valueCaption={pct(waterRingValue)}
+                  label="Water"
+                />
+              </div>
+            );
+
+          /* ── Crew · Today strip ───────────────────────────────────────
+             Crew & Social surface — hidden when that toggle is off. */
+          case "crew":
+            return (
+              <div key="crew" className="crew-feature">
+                <SectionHeader action={<Link href="/crew">Open Crew →</Link>}>
+                  Crew · Today
+                </SectionHeader>
+
+                {crew.totalCount > 0 ? (
+                  <Link href="/crew" className="block">
+                    <Card className="mb-2.5 flex items-center gap-2.5 p-3.5">
+                      <div className="flex">
+                        {crew.members.slice(0, 4).map((m, i) => (
+                          <span
+                            key={m.user_id}
+                            className="flex h-[38px] w-[38px] items-center justify-center rounded-full border-2 border-bg font-display text-sm font-bold text-bg"
+                            style={{
+                              background: avatarColor(m.user_id || m.display_name),
+                              marginRight:
+                                i < Math.min(crew.members.length, 4) - 1 ? -10 : 0,
+                            }}
+                          >
+                            {initials(m.display_name)}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex-1 text-[13px] text-muted">
+                        <b className="font-display text-text">
+                          {crew.trainedCount} of {crew.totalCount}
+                        </b>{" "}
+                        crew trained today
+                      </div>
+                      <span className="font-display text-gold">›</span>
+                    </Card>
+                  </Link>
+                ) : (
+                  <Card className="mb-2.5 flex items-center gap-3 p-3.5">
+                    <div className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-line bg-surface2 text-base">
+                      👋
+                    </div>
+                    <div className="flex-1 text-[13px] text-muted">
+                      No crew yet —{" "}
+                      <span className="text-text">join or start one</span> to
+                      train together.
+                    </div>
+                    <Link href="/crew" className="font-display text-gold">
+                      ›
+                    </Link>
+                  </Card>
+                )}
+              </div>
+            );
+
+          default:
+            return null;
+        }
+      })}
 
       {/* ── Primary CTA ─────────────────────────────────────────────────── */}
       {hasSession ? (

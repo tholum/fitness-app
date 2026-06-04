@@ -87,6 +87,40 @@ function resolveTheme(mode: ThemeMode): "dark" | "light" {
   return mode;
 }
 
+/* ── Feature-flag attributes ──────────────────────────────────────────────
+   The boolean Appearance toggles drive real rendering via [data-*="off"]
+   attributes on <html> + matching CSS in globals.css. This mirrors the
+   theme-token engine ([data-theme]/[data-accent]) so server components (the
+   Today / Crew / Progress pages and the app shell) honor the toggles without
+   prop-drilling, and changes are live (no reload). A flag is only present
+   when OFF; the default (ON) leaves the attribute absent so nothing hides. */
+
+/** Map of [data-*] attribute → "off" for each boolean flag that is disabled. */
+export function featureFlagAttrs(a: Appearance): Record<string, "off"> {
+  const out: Record<string, "off"> = {};
+  if (!a.crewSocial) out["data-crew"] = "off";
+  if (!a.gamification) out["data-gamify"] = "off";
+  if (!a.topoTexture) out["data-topo"] = "off";
+  return out;
+}
+
+/** All flag attribute names — used to clear stale ones before re-applying. */
+const FEATURE_FLAG_NAMES = ["data-crew", "data-gamify", "data-topo"] as const;
+
+/**
+ * Inline script (no-flash): set the feature-flag attributes on <html>
+ * synchronously from the server-known appearance, before first paint, so a
+ * user who turned a feature OFF never sees it flash on during hydration.
+ * Render via <script dangerouslySetInnerHTML={{ __html: featureFlagScript(a) }} />.
+ */
+export function featureFlagScript(a: Appearance): string {
+  const attrs = featureFlagAttrs(a);
+  return `(function(){var e=document.documentElement;${FEATURE_FLAG_NAMES.map(
+    (n) =>
+      attrs[n] ? `e.setAttribute(${JSON.stringify(n)},"off");` : `e.removeAttribute(${JSON.stringify(n)});`,
+  ).join("")}})();`;
+}
+
 interface ThemeContextValue {
   appearance: Appearance;
   /** Patch one or more appearance fields (optimistic + persisted). */
@@ -109,13 +143,21 @@ export interface ThemeProviderProps {
 export function ThemeProvider({ userId, initial, children }: ThemeProviderProps) {
   const [appearance, setAppearanceState] = useState<Appearance>(initial);
 
-  /** Apply theme + accent to the document root so every token re-skins. */
+  /** Apply theme + accent + feature flags to the root so every token
+   *  re-skins and the [data-*="off"] feature gates take effect live. */
   const applyToDom = useCallback((a: Appearance) => {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
     root.setAttribute("data-theme", resolveTheme(a.theme));
     if (a.accent === "default") root.removeAttribute("data-accent");
     else root.setAttribute("data-accent", a.accent);
+
+    // Feature flags: set "off" when disabled, otherwise clear the attribute.
+    const flags = featureFlagAttrs(a);
+    for (const name of FEATURE_FLAG_NAMES) {
+      if (flags[name]) root.setAttribute(name, "off");
+      else root.removeAttribute(name);
+    }
   }, []);
 
   // Apply on mount + whenever appearance changes.
@@ -182,4 +224,29 @@ export function useTheme(): ThemeContextValue {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
   return ctx;
+}
+
+/**
+ * Returns a `buzz()` that fires navigator.vibrate() ONLY when the user's
+ * Haptics toggle is on and the device supports the Vibration API. Used by
+ * the check-in (Mark Complete / block ticks) and crew reaction surfaces so
+ * the "Buzz on check-ins & reactions" toggle does real work.
+ */
+export function useHaptics(): (pattern?: number | number[]) => void {
+  const { appearance } = useTheme();
+  const enabled = appearance.haptics;
+  return useCallback(
+    (pattern: number | number[] = 12) => {
+      if (!enabled) return;
+      if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") {
+        return;
+      }
+      try {
+        navigator.vibrate(pattern);
+      } catch {
+        // Vibration can throw in some embedded/insecure contexts — ignore.
+      }
+    },
+    [enabled],
+  );
 }

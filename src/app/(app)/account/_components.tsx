@@ -132,7 +132,7 @@ export function ProfileForm({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={preview}
-            alt=""
+            alt={`${name.trim() || "Your"} avatar`}
             className="h-[68px] w-[68px] flex-shrink-0 rounded-full border border-line object-cover"
           />
         ) : (

@@ -29,6 +29,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useHaptics } from "@/components/ThemeProvider";
 import {
   react,
   nudge,
@@ -171,6 +172,13 @@ function ErrorNote({ message }: { message: string | null }) {
 
 const REACTION_EMOJIS = ["👊", "🔥", "💬"] as const;
 
+/** Human-readable names so reaction chips aren't announced as bare emoji. */
+const REACTION_LABELS: Record<string, string> = {
+  "👊": "Fist bump",
+  "🔥": "Fire",
+  "💬": "Comment",
+};
+
 interface ReactionState {
   count: number;
   mine: boolean;
@@ -183,6 +191,7 @@ export interface ReactionsProps {
 }
 
 export function Reactions({ postId, initial }: ReactionsProps) {
+  const buzz = useHaptics();
   const [state, setState] = useState<Record<string, ReactionState>>(() => {
     const seeded: Record<string, ReactionState> = {};
     for (const emoji of REACTION_EMOJIS) {
@@ -193,6 +202,9 @@ export function Reactions({ postId, initial }: ReactionsProps) {
   const [pending, startTransition] = useTransition();
 
   function toggle(emoji: string) {
+    // Light haptic when ADDING a reaction (Appearance → Haptics).
+    if (!(state[emoji]?.mine ?? false)) buzz(12);
+
     // Optimistic flip.
     setState((prev) => {
       const cur = prev[emoji] ?? { count: 0, mine: false };
@@ -222,6 +234,11 @@ export function Reactions({ postId, initial }: ReactionsProps) {
     <div className="mt-3 flex gap-2">
       {REACTION_EMOJIS.map((emoji) => {
         const s = state[emoji];
+        const name = REACTION_LABELS[emoji] ?? emoji;
+        const label =
+          s.count > 0
+            ? `${name}, ${s.count} ${s.count === 1 ? "reaction" : "reactions"}`
+            : name;
         return (
           <button
             key={emoji}
@@ -229,6 +246,7 @@ export function Reactions({ postId, initial }: ReactionsProps) {
             disabled={pending}
             onClick={() => toggle(emoji)}
             aria-pressed={s.mine}
+            aria-label={label}
             className={cx(
               "flex items-center gap-1.5 rounded-[20px] border px-[11px] py-[5px] font-display text-[13px] font-semibold transition-colors disabled:opacity-70",
               s.mine
@@ -970,6 +988,7 @@ export function NoteComposer({ crewId }: NoteComposerProps) {
         onChange={(e) => setBody(e.target.value)}
         rows={2}
         maxLength={280}
+        aria-label="Encouragement for the crew"
         placeholder="Drop some encouragement for the crew…"
         className="w-full resize-none bg-transparent font-body text-sm text-text outline-none placeholder:text-faint"
       />

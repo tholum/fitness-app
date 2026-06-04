@@ -144,6 +144,18 @@ export async function completeSession(
       body: input.title,
     });
     revalidatePath("/crew");
+  } else if (sessionLogId) {
+    // Re-completing a session can flip shared true → false (or drop the crew).
+    // feed_posts has no FK to session_logs, so an earlier post would otherwise
+    // linger in the feed — remove it. Idempotent: a no-op when none exists.
+    // feed_delete RLS scopes this to the author.
+    await supabase
+      .from("feed_posts")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("kind", "session")
+      .eq("ref_id", sessionLogId);
+    revalidatePath("/crew");
   }
 
   // ── Scheduler advance (gap 5) ──────────────────────────────────────────────
@@ -168,8 +180,8 @@ export async function deleteSession(id: string): Promise<ActionResult> {
   const { supabase, user } = await requireUser();
   if (!user) return { ok: false, error: "Not authenticated" };
 
-  // block_completions + feed_posts (ref_id) cascade / are independent; delete
-  // the log itself. RLS scopes this to the owner; the extra eq is belt-and-braces.
+  // block_completions cascade via FK; delete the log itself. RLS scopes this to
+  // the owner; the extra eq is belt-and-braces.
   const { error } = await supabase
     .from("session_logs")
     .delete()
@@ -177,11 +189,22 @@ export async function deleteSession(id: string): Promise<ActionResult> {
     .eq("user_id", user.id);
   if (error) return { ok: false, error: error.message };
 
+  // feed_posts has no FK to session_logs (ref_id is a bare uuid), so the crew
+  // post does not cascade. Remove the matching post so a deleted session stops
+  // showing in the feed. feed_delete RLS scopes this to the author.
+  await supabase
+    .from("feed_posts")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("kind", "session")
+    .eq("ref_id", id);
+
   // Keep gamification honest after a removal.
   await awardCompletionRewards(supabase, user.id);
 
   revalidatePath("/today");
   revalidatePath("/progress");
+  revalidatePath("/crew");
   return { ok: true };
 }
 
@@ -537,9 +560,13 @@ export async function removeMember(crewId: string, userId: string): Promise<Acti
     .eq("user_id", userId);
   if (error) return { ok: false, error: error.message };
 
-  // Repoint the removed user's active crew away from this one if needed.
-  await clearActiveCrewIfMatches(supabase, userId, crewId);
-
+  // We intentionally do NOT touch the removed member's profiles.active_crew_id
+  // here. Under RLS a user's active_crew_id can only be mutated by that user
+  // (profiles_update: id = auth.uid()), and once removed the owner no longer
+  // shares the crew, so profiles_select hides the row too — any attempt would
+  // be a silent cross-user no-op. The dangling pointer is harmless: the read
+  // side (resolveActiveCrewId in both queries.ts and this file) re-validates
+  // membership and falls back to the earliest remaining crew (or null).
   revalidatePath("/crew");
   return { ok: true };
 }

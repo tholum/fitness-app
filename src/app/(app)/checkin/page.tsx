@@ -4,12 +4,14 @@ import {
   getProfile,
   getTodaySession,
   getCrewToday,
+  getProgram,
   resolveTodayDay,
 } from "@/lib/queries";
 import { StatPill } from "@/components/ui";
 import type {
   BlockType,
   Json,
+  Program,
   ProgramBlock,
   ProgramDay,
 } from "@/lib/types";
@@ -78,6 +80,7 @@ export default async function CheckinPage() {
   let estMinutes: number | null = null;
   let alreadyComplete = false;
   let scheduledDay: ProgramDay | null = null;
+  let program: Program | null = null;
   let blocks: CheckinBlock[] = [];
 
   if (todaySession) {
@@ -110,6 +113,11 @@ export default async function CheckinPage() {
       if (scheduledDay?.est_minutes && estMinutes == null) {
         estMinutes = scheduledDay.est_minutes;
       }
+      // Eyebrow source: the program that owns this scheduled day (name/source),
+      // mirroring how Today derives its hero eyebrow.
+      if (scheduledDay?.program_id) {
+        program = await getProgram(scheduledDay.program_id);
+      }
       programBlocks = (pBlocks ?? []) as ProgramBlock[];
     }
 
@@ -140,6 +148,7 @@ export default async function CheckinPage() {
     const today = await resolveTodayDay(profile.id);
     if (today?.day) {
       scheduledDay = today.day;
+      program = today.program;
       programDayId = today.day.id;
       title = today.day.title;
       videoUrl = today.day.video_url;
@@ -159,13 +168,20 @@ export default async function CheckinPage() {
     ? "Follow along on the MTNTOUGH video, then tick off each block as you finish."
     : "Tick off each block as you finish, then mark the session complete.";
 
+  // Header eyebrow: derive from the program like Today's hero does, so a
+  // custom program with a video link isn't mislabeled "MTNTOUGH · Backcountry".
+  const eyebrow =
+    program?.source === "MTNTOUGH"
+      ? "MTNTOUGH"
+      : program?.name ?? "Check In";
+
   return (
     <>
       {/* Header — mirrors the prototype's .hd for the Session screen. */}
       <div className="relative z-10 flex items-center justify-between px-0.5 pb-[18px] pt-2">
         <div>
           <div className="font-cond text-[11px] uppercase tracking-[0.18em] text-muted">
-            {scheduledDay?.video_url ? "MTNTOUGH · Backcountry" : "Check In"}
+            {eyebrow}
           </div>
           <h1 className="mt-[3px] font-display text-[30px] font-bold uppercase leading-none tracking-[0.03em] text-text">
             Check In
