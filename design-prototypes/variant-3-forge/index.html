@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FORGE — Variant 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* FORGE — bold, gamified, neon */
+    --bg:#0a0a14;
+    --bg2:#10101f;
+    --surface:rgba(255,255,255,.045);
+    --surface-solid:#16162a;
+    --line:rgba(255,255,255,.09);
+    --text:#f2f2fa;
+    --muted:#9a9ab5;
+    --faint:#5e5e7a;
+    --c1:#ff2e88;   /* hot pink */
+    --c2:#7b5cff;   /* violet */
+    --c3:#16e0c8;   /* cyan */
+    --c4:#ffd23f;   /* gold */
+    --grad:linear-gradient(135deg,#ff2e88,#7b5cff);
+    --grad2:linear-gradient(135deg,#16e0c8,#7b5cff);
+    --radius:22px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    background:#060610;font-family:'Sora',system-ui,sans-serif;color:var(--text);
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  .phone{
+    width:390px;height:844px;background:var(--bg);border-radius:48px;border:11px solid #000;
+    box-shadow:0 0 60px rgba(123,92,255,.25),0 40px 90px rgba(0,0,0,.7);position:relative;overflow:hidden;display:flex;flex-direction:column;
+  }
+  .phone::before{content:'';position:absolute;top:-100px;left:-60px;width:280px;height:280px;background:radial-gradient(circle,rgba(255,46,136,.4),transparent 70%);filter:blur(40px);z-index:0;pointer-events:none}
+  .phone::after{content:'';position:absolute;bottom:60px;right:-80px;width:300px;height:300px;background:radial-gradient(circle,rgba(22,224,200,.28),transparent 70%);filter:blur(50px);z-index:0;pointer-events:none}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:30px;background:#000;border-radius:0 0 22px 22px;z-index:50}
+  .statusbar{height:48px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 8px;font-size:13px;font-weight:600;flex-shrink:0;position:relative;z-index:2}
+
+  .screen-wrap{flex:1;overflow:hidden;position:relative;z-index:1}
+  .screen{position:absolute;inset:0;overflow-y:auto;display:none;padding:0 18px 100px}
+  .screen.active{display:block}
+  .screen::-webkit-scrollbar{display:none}
+
+  .hd{padding:8px 2px 18px;display:flex;justify-content:space-between;align-items:center}
+  .hd .hi{font-size:13px;color:var(--muted);font-weight:500}
+  .hd h1{font-size:30px;font-weight:800;letter-spacing:-.5px;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .streak{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);padding:8px 12px;border-radius:30px;font-weight:700;font-size:14px}
+  .streak .fire{font-size:18px}
+
+  .glass{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);backdrop-filter:blur(12px);position:relative;overflow:hidden}
+
+  /* hero quest */
+  .quest{padding:20px;background:var(--grad);border-radius:26px;position:relative;overflow:hidden;margin-bottom:14px}
+  .quest::after{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(255,255,255,.25),transparent 70%)}
+  .quest .tag{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.85;font-family:'Space Grotesk'}
+  .quest h2{font-size:23px;font-weight:800;margin:8px 0 4px;letter-spacing:-.3px}
+  .quest .meta{font-size:12px;opacity:.85}
+  .quest .pbar{height:10px;background:rgba(0,0,0,.25);border-radius:6px;margin-top:14px;overflow:hidden}
+  .quest .pbar>i{display:block;height:100%;background:#fff;border-radius:6px;box-shadow:0 0 12px rgba(255,255,255,.6)}
+  .quest .xp{display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-top:7px;font-family:'Space Grotesk'}
+  .quest .play{position:absolute;bottom:18px;right:18px;width:52px;height:52px;border-radius:50%;background:#0a0a14;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer}
+  .quest .play svg{width:22px;height:22px;fill:#fff}
+
+  /* rings row */
+  .rings{display:flex;gap:12px;margin-bottom:14px}
+  .ringcard{flex:1;padding:14px;text-align:center}
+  .ringcard .rv{font-family:'Space Grotesk';font-weight:700;font-size:18px;margin-top:6px}
+  .ringcard .rl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+
+  .sec{font-size:16px;font-weight:700;margin:22px 4px 12px;display:flex;justify-content:space-between;align-items:center}
+  .sec a{font-size:12px;color:var(--c3);font-weight:600;text-decoration:none}
+
+  .qust{display:flex;align-items:center;gap:14px;padding:14px;margin-bottom:10px}
+  .qicon{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .qicon svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2}
+  .qust .info{flex:1}
+  .qust .a{font-weight:700;font-size:15px}
+  .qust .b{font-size:12px;color:var(--muted);margin-top:1px}
+  .qust .pts{font-family:'Space Grotesk';font-weight:700;font-size:13px;color:var(--c4)}
+
+  .btn{width:100%;border:none;border-radius:18px;padding:17px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--grad);color:#fff;box-shadow:0 8px 24px rgba(255,46,136,.35)}
+  .btn.ghost{background:var(--surface);border:1px solid var(--line);color:var(--text);box-shadow:none}
+
+  /* nav */
+  .nav{position:absolute;bottom:0;left:0;right:0;height:84px;background:rgba(10,10,20,.7);backdrop-filter:blur(24px);border-top:1px solid var(--line);display:flex;align-items:center;z-index:40;padding:0 8px 18px}
+  .nav button{flex:1;background:none;border:none;color:var(--faint);display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:14px;cursor:pointer;font-size:10px;font-weight:600;font-family:inherit}
+  .nav button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2}
+  .nav button.on{color:var(--text)}
+  .nav button.on svg{stroke:url(#ng)}
+  .nav .fab{flex:0 0 auto;width:58px;height:58px;border-radius:50%;background:var(--grad);margin:-20px 6px 0;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(255,46,136,.5);border:none;cursor:pointer}
+  .nav .fab svg{width:26px;height:26px;stroke:#fff;stroke-width:2.5;fill:none}
+
+  /* TRAIN */
+  .rest{padding:18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;background:var(--grad2);border-radius:var(--radius)}
+  .rest .t{font-family:'Space Grotesk';font-weight:700;font-size:34px;color:#0a0a14}
+  .rest .rl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(10,10,20,.6)}
+  .rest button{background:rgba(10,10,20,.85);color:#fff;border:none;border-radius:14px;padding:11px 16px;font-weight:700;cursor:pointer;font-family:inherit}
+  .ex{padding:16px;margin-bottom:12px}
+  .ex .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .ex .nm{font-weight:700;font-size:18px}
+  .ex .sub{font-size:12px;color:var(--c3);font-weight:600;margin-top:2px}
+  .vid{width:46px;height:46px;border-radius:14px;background:var(--grad);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .vid svg{width:20px;height:20px;fill:#fff}
+  .srow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .srow .sn{width:30px;height:30px;border-radius:9px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:13px;color:var(--muted);flex-shrink:0}
+  .srow .inp{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px;text-align:center;font-weight:700;font-size:16px;font-family:'Space Grotesk'}
+  .srow .inp small{display:block;font-size:8px;color:var(--faint);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-top:2px;font-family:'Sora'}
+  .cb{width:42px;height:42px;border-radius:13px;border:1.5px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+  .cb.done{background:var(--grad);border:none}
+  .cb svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:3}
+
+  /* BODY */
+  .fuel{padding:20px;text-align:center;margin-bottom:14px}
+  .macro-row{display:flex;gap:10px;margin-top:6px}
+  .macro{flex:1}
+  .macro .mv{font-family:'Space Grotesk';font-weight:700;font-size:18px}
+  .macro .ml{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+  .macro .mb{height:5px;border-radius:3px;background:var(--line);margin-top:7px;overflow:hidden}
+  .macro .mb>i{display:block;height:100%;border-radius:3px}
+  .log{display:flex;align-items:center;gap:13px;padding:14px;margin-bottom:10px}
+  .log .ic{width:42px;height:42px;border-radius:13px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+  .log .ic svg{width:20px;height:20px;stroke:var(--c3);fill:none;stroke-width:2}
+  .log .info{flex:1}.log .a{font-weight:700;font-size:14px}.log .b{font-size:12px;color:var(--muted)}
+  .log .v{font-family:'Space Grotesk';font-weight:700;font-size:16px}
+
+  /* PROGRESS */
+  .lvl{padding:20px;margin-bottom:14px;text-align:center}
+  .lvl .badge{width:80px;height:80px;border-radius:50%;background:var(--grad);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:800;font-size:30px;box-shadow:0 0 30px rgba(255,46,136,.4)}
+  .bars{display:flex;align-items:flex-end;gap:8px;height:120px;padding:16px 16px 28px;position:relative}
+  .bars .b{flex:1;border-radius:6px 6px 0 0;position:relative;background:var(--grad);min-height:10px}
+  .bars .b span{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:9px;color:var(--faint)}
+  .badges{display:flex;gap:12px;overflow-x:auto;padding:4px 0}
+  .badges::-webkit-scrollbar{display:none}
+  .bdg{flex:0 0 auto;width:84px;text-align:center}
+  .bdg .circ{width:66px;height:66px;border-radius:50%;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:28px}
+  .bdg .nm{font-size:10px;color:var(--muted);font-weight:600}
+  .bdg.locked .circ{background:var(--surface);border:1px dashed var(--line);filter:grayscale(1);opacity:.4}
+
+  /* APPEARANCE */
+  .opt{padding:16px;margin-bottom:12px}
+  .opt .l{font-weight:700;font-size:15px}
+  .opt .d{font-size:12px;color:var(--muted);margin:3px 0 12px;line-height:1.4}
+  .grads{display:flex;gap:12px}
+  .gr{flex:1;height:56px;border-radius:14px;cursor:pointer;border:2px solid transparent;position:relative}
+  .gr.sel{border-color:#fff}
+  .gr.sel::after{content:'✓';position:absolute;top:6px;right:8px;font-weight:800}
+  .seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px}
+  .seg button{flex:1;background:none;border:none;color:var(--muted);padding:10px;font-weight:700;font-size:13px;border-radius:10px;cursor:pointer;font-family:inherit}
+  .seg button.on{background:var(--grad);color:#fff}
+  .toggle{display:flex;justify-content:space-between;align-items:center;padding:16px}
+  .toggle .l{font-weight:700;font-size:15px}.toggle .d{font-size:12px;color:var(--muted);margin-top:2px}
+  .swt{width:48px;height:28px;border-radius:15px;background:var(--line);position:relative;cursor:pointer;flex-shrink:0;transition:.2s}
+  .swt.on{background:var(--grad)}
+  .swt i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s}
+  .swt.on i{left:23px}
+  .wchip{display:flex;align-items:center;gap:12px;padding:15px 16px;margin-bottom:10px}
+  .wchip .grip{color:var(--faint)}
+</style>
+</head>
+<body>
+<svg width="0" height="0"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff2e88"/><stop offset="1" stop-color="#7b5cff"/></linearGradient></defs></svg>
+<div class="phone">
+  <div class="notch"></div>
+  <div class="statusbar"><span>6:14</span><span></span><span>64% ▮</span></div>
+
+  <div class="screen-wrap">
+
+    <!-- TODAY -->
+    <section class="screen active" id="s-today">
+      <div class="hd"><div><div class="hi">Let's go, Tim 🔥</div><h1>Today</h1></div><div class="streak"><span class="fire">🔥</span>14</div></div>
+
+      <div class="quest">
+        <div class="tag">Phase 2 · Week 3 · Day 4</div>
+        <h2>Lower Body + Ruck</h2>
+        <div class="meta">MTNTOUGH · Backcountry Athlete · ~58 min</div>
+        <div class="pbar"><i style="width:64%"></i></div>
+        <div class="xp"><span>QUEST 18 / 28</span><span>+420 XP</span></div>
+        <button class="play" onclick="go('train')"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+      </div>
+
+      <div class="rings">
+        <div class="glass ringcard">
+          <svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="6"/><circle cx="28" cy="28" r="22" fill="none" stroke="#ff2e88" stroke-width="6" stroke-linecap="round" stroke-dasharray="138" stroke-dashoffset="40" transform="rotate(-90 28 28)"/></svg>
+          <div class="rv">79%</div><div class="rl">Fuel</div>
+        </div>
+        <div class="glass ringcard">
+          <svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="6"/><circle cx="28" cy="28" r="22" fill="none" stroke="#16e0c8" stroke-width="6" stroke-linecap="round" stroke-dasharray="138" stroke-dashoffset="20" transform="rotate(-90 28 28)"/></svg>
+          <div class="rv">85%</div><div class="rl">Move</div>
+        </div>
+        <div class="glass ringcard">
+          <svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="6"/><circle cx="28" cy="28" r="22" fill="none" stroke="#ffd23f" stroke-width="6" stroke-linecap="round" stroke-dasharray="138" stroke-dashoffset="100" transform="rotate(-90 28 28)"/></svg>
+          <div class="rv">28%</div><div class="rl">Water</div>
+        </div>
+      </div>
+
+      <div class="sec">Today's Quests <a href="#">See all</a></div>
+      <div class="glass qust"><div class="qicon" style="background:var(--grad)"><svg viewBox="0 0 24 24"><path d="M6 12h12M4 9v6M20 9v6M8 6v12M16 6v12"/></svg></div><div class="info"><div class="a">Back Squat 5×5</div><div class="b">Strength Block A · 245 lb</div></div><div class="pts">+150</div></div>
+      <div class="glass qust"><div class="qicon" style="background:var(--grad2)"><svg viewBox="0 0 24 24"><path d="M4 20l5-9 4 5 7-11"/></svg></div><div class="info"><div class="a">Weighted Ruck</div><div class="b">3 mi · 35 lb · Zone 2</div></div><div class="pts">+200</div></div>
+      <div class="glass qust"><div class="qicon" style="background:linear-gradient(135deg,#ffd23f,#ff2e88)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div class="info"><div class="a">Mobility Flush</div><div class="b">8 min · Hips & T-spine</div></div><div class="pts">+70</div></div>
+
+      <button class="btn" style="margin-top:14px" onclick="go('train')">⚡ Start Session</button>
+    </section>
+
+    <!-- TRAIN -->
+    <section class="screen" id="s-train">
+      <div class="hd"><div><div class="hi">Strength Block A</div><h1>Train</h1></div><div class="streak"><span>⚡</span>+320 XP</div></div>
+
+      <div class="rest"><div><div class="rl">Rest Timer</div><div class="t">1:32</div></div><button>Skip ›</button></div>
+
+      <div class="glass ex">
+        <div class="head"><div><div class="nm">Back Squat</div><div class="sub">5 × 5 · RPE 8 · LAST 240 LB</div></div><div class="vid"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
+        <div class="srow"><span class="sn">1</span><div class="inp">245<small>lb</small></div><div class="inp">5<small>reps</small></div><div class="cb done"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div></div>
+        <div class="srow"><span class="sn">2</span><div class="inp">245<small>lb</small></div><div class="inp">5<small>reps</small></div><div class="cb done"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div></div>
+        <div class="srow"><span class="sn">3</span><div class="inp">245<small>lb</small></div><div class="inp">5<small>reps</small></div><div class="cb"></div></div>
+        <div class="srow"><span class="sn">4</span><div class="inp" style="color:var(--faint)">—<small>lb</small></div><div class="inp" style="color:var(--faint)">—<small>reps</small></div><div class="cb"></div></div>
+      </div>
+
+      <div class="glass ex">
+        <div class="head"><div><div class="nm">Weighted Ruck</div><div class="sub">3 MI · 35 LB · ZONE 2</div></div><div class="vid" style="background:var(--grad2)"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
+        <div class="srow"><span class="sn">▸</span><div class="inp">2.4<small>miles</small></div><div class="inp">32:18<small>time</small></div><div class="inp">142<small>hr</small></div></div>
+      </div>
+
+      <button class="btn" onclick="go('today')">🏆 Complete & Claim 420 XP</button>
+    </section>
+
+    <!-- BODY -->
+    <section class="screen" id="s-body">
+      <div class="hd"><div><div class="hi">Tuesday, June 3</div><h1>Body & Fuel</h1></div><div class="streak">＋ Log</div></div>
+
+      <div class="glass fuel">
+        <svg width="130" height="130" viewBox="0 0 130 130" style="display:block;margin:0 auto">
+          <circle cx="65" cy="65" r="54" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="12"/>
+          <circle cx="65" cy="65" r="54" fill="none" stroke="url(#fg)" stroke-width="12" stroke-linecap="round" stroke-dasharray="339" stroke-dashoffset="71" transform="rotate(-90 65 65)"/>
+          <defs><linearGradient id="fg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff2e88"/><stop offset="1" stop-color="#7b5cff"/></linearGradient></defs>
+          <text x="65" y="60" text-anchor="middle" font-family="Space Grotesk" font-weight="700" font-size="30" fill="#f2f2fa">2140</text>
+          <text x="65" y="80" text-anchor="middle" font-family="Sora" font-size="11" fill="#9a9ab5">/ 2700 kcal</text>
+        </svg>
+        <div class="macro-row">
+          <div class="macro"><div class="mv">168g</div><div class="ml">Protein</div><div class="mb"><i style="width:82%;background:#ff2e88"></i></div></div>
+          <div class="macro"><div class="mv">196g</div><div class="ml">Carbs</div><div class="mb"><i style="width:60%;background:#16e0c8"></i></div></div>
+          <div class="macro"><div class="mv">62g</div><div class="ml">Fat</div><div class="mb"><i style="width:70%;background:#ffd23f"></i></div></div>
+        </div>
+      </div>
+
+      <div class="sec">Body Metrics <a href="#">History</a></div>
+      <div class="glass log"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h18"/><circle cx="12" cy="12" r="9"/></svg></div><div class="info"><div class="a">Bodyweight</div><div class="b">▼ 1.2 lb this week 📉</div></div><div class="v">182.0</div></div>
+      <div class="glass log"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/></svg></div><div class="info"><div class="a">Waist</div><div class="b">2 days ago</div></div><div class="v">33.5"</div></div>
+      <div class="glass log"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></div><div class="info"><div class="a">Body Fat</div><div class="b">Calipers · est.</div></div><div class="v">14.8%</div></div>
+
+      <div class="sec">Today's Fuel <a href="#">+ Add</a></div>
+      <div class="glass log"><div class="ic"><svg viewBox="0 0 24 24"><path d="M5 3v18M5 8h6M19 3c-2 4-2 7 0 10v8"/></svg></div><div class="info"><div class="a">Breakfast</div><div class="b">Eggs, oats, berries</div></div><div class="v">620</div></div>
+      <div class="glass log"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg></div><div class="info"><div class="a">Lunch</div><div class="b">Elk, rice, greens</div></div><div class="v">810</div></div>
+    </section>
+
+    <!-- PROGRESS -->
+    <section class="screen" id="s-progress">
+      <div class="hd"><div><div class="hi">Your journey</div><h1>Progress</h1></div></div>
+
+      <div class="glass lvl">
+        <div class="badge">12</div>
+        <div style="font-weight:700;font-size:18px">Backcountry Athlete</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">2,340 / 3,000 XP to Level 13</div>
+        <div class="quest" style="background:none;padding:0;margin-top:14px"><div class="pbar" style="margin:0"><i style="width:78%"></i></div></div>
+      </div>
+
+      <div class="sec">Weekly Volume <a href="#" style="color:#16e0c8">▲ 11%</a></div>
+      <div class="glass"><div class="bars">
+        <div class="b" style="height:45%"><span>W1</span></div><div class="b" style="height:55%"><span>W2</span></div>
+        <div class="b" style="height:50%"><span>W3</span></div><div class="b" style="height:70%"><span>W4</span></div>
+        <div class="b" style="height:65%"><span>W5</span></div><div class="b" style="height:85%"><span>W6</span></div>
+        <div class="b" style="height:100%"><span>W7</span></div>
+      </div></div>
+
+      <div class="sec">Badges <a href="#">12 / 40</a></div>
+      <div class="badges">
+        <div class="bdg"><div class="circ" style="background:linear-gradient(135deg,#ffd23f,#ff2e88)">🏔️</div><div class="nm">Summit</div></div>
+        <div class="bdg"><div class="circ" style="background:var(--grad)">🔥</div><div class="nm">14-Day</div></div>
+        <div class="bdg"><div class="circ" style="background:var(--grad2)">🎒</div><div class="nm">Rucker</div></div>
+        <div class="bdg"><div class="circ" style="background:linear-gradient(135deg,#16e0c8,#ffd23f)">💪</div><div class="nm">315 Club</div></div>
+        <div class="bdg locked"><div class="circ">🔒</div><div class="nm">Iron Lung</div></div>
+      </div>
+    </section>
+
+    <!-- APPEARANCE -->
+    <section class="screen" id="s-look">
+      <div class="hd"><div><div class="hi">Make it yours</div><h1>Appearance</h1></div></div>
+
+      <div class="glass opt"><div class="l">Gradient Theme</div><div class="d">Powers your hero quest, rings, and buttons.</div>
+        <div class="grads">
+          <div class="gr sel" style="background:linear-gradient(135deg,#ff2e88,#7b5cff)"></div>
+          <div class="gr" style="background:linear-gradient(135deg,#16e0c8,#7b5cff)"></div>
+          <div class="gr" style="background:linear-gradient(135deg,#ffd23f,#ff6b2e)"></div>
+          <div class="gr" style="background:linear-gradient(135deg,#00e5ff,#0077ff)"></div>
+        </div>
+      </div>
+
+      <div class="glass opt"><div class="l">Mood</div><div class="d">FORGE is built for OLED dark. Light mode dims the glow.</div>
+        <div class="seg"><button class="on">Midnight</button><button>Nebula</button><button>Daylight</button></div>
+      </div>
+
+      <div class="glass opt"><div class="l">Energy</div><div class="d">How much animation, glow & celebration.</div>
+        <div class="seg"><button>Calm</button><button class="on">Hyped</button><button>Max</button></div>
+      </div>
+
+      <div class="glass">
+        <div class="toggle"><div><div class="l">Gamification</div><div class="d">XP, levels, streaks & badges</div></div><div class="swt on" onclick="this.classList.toggle('on')"><i></i></div></div>
+        <div class="toggle" style="border-top:1px solid var(--line)"><div><div class="l">Confetti on PRs</div><div class="d">Celebrate every record</div></div><div class="swt on" onclick="this.classList.toggle('on')"><i></i></div></div>
+        <div class="toggle" style="border-top:1px solid var(--line)"><div><div class="l">Glassmorphism</div><div class="d">Frosted blur on cards</div></div><div class="swt on" onclick="this.classList.toggle('on')"><i></i></div></div>
+        <div class="toggle" style="border-top:1px solid var(--line)"><div><div class="l">Haptics</div><div class="d">Buzz on reps & rewards</div></div><div class="swt on" onclick="this.classList.toggle('on')"><i></i></div></div>
+      </div>
+
+      <div class="sec">Home Cards <a href="#">Reset</a></div>
+      <div class="glass wchip"><span class="grip">⠿</span><span style="flex:1;font-weight:700">Hero Quest</span><div class="swt on"><i></i></div></div>
+      <div class="glass wchip"><span class="grip">⠿</span><span style="flex:1;font-weight:700">Activity Rings</span><div class="swt on"><i></i></div></div>
+      <div class="glass wchip"><span class="grip">⠿</span><span style="flex:1;font-weight:700">Today's Quests</span><div class="swt on"><i></i></div></div>
+      <div class="glass wchip"><span class="grip">⠿</span><span style="flex:1;font-weight:700">Leaderboard</span><div class="swt" onclick="this.classList.toggle('on')"><i></i></div></div>
+    </section>
+
+  </div>
+
+  <nav class="nav">
+    <button class="on" data-s="today" onclick="go('today')"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>Today</button>
+    <button data-s="body" onclick="go('body')"><svg viewBox="0 0 24 24"><path d="M3 12c4 0 4-6 9-6s5 6 9 6-4 6-9 6-5-6-9-6z"/></svg>Body</button>
+    <button class="fab" onclick="go('train')"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button data-s="progress" onclick="go('progress')"><svg viewBox="0 0 24 24"><path d="M4 14l5-5 4 4 7-8"/></svg>Progress</button>
+    <button data-s="look" onclick="go('look')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Look</button>
+  </nav>
+</div>
+<script>
+  function go(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('s-'+id).classList.add('active');
+    document.querySelectorAll('.nav button[data-s]').forEach(b=>b.classList.toggle('on',b.dataset.s===id));
+    document.querySelector('.screen.active').scrollTop=0;
+  }
+  document.querySelectorAll('.cb').forEach(c=>c.addEventListener('click',()=>{c.classList.toggle('done');c.innerHTML=c.classList.contains('done')?'<svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>':''}));
+  document.querySelectorAll('.grads').forEach(g=>g.querySelectorAll('.gr').forEach(s=>s.addEventListener('click',()=>{g.querySelectorAll('.gr').forEach(x=>x.classList.remove('sel'));s.classList.add('sel')})));
+  document.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{g.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on')})));
+</script>
+</body>
+</html>

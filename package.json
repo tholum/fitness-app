@@ -1,0 +1,39 @@
+{
+  "name": "basecamp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BASECAMP — MTNTOUGH-style training tracker with cooperative crew accountability",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "db:push": "supabase db push",
+    "db:reset": "supabase db reset"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.45.4",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@serwist/next": "^9.0.9",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "^15.1.0",
+    "postcss": "^8.4.49",
+    "serwist": "^9.0.9",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "packageManager": "pnpm@10.18.0+sha512.e804f889f1cecc40d572db084eec3e4881739f8dec69c0ff10d2d1beff9a4e309383ba27b5b750059d7f4c149535b6cd0d2cb1ed3aeb739239a4284a68f40cfa"
+}

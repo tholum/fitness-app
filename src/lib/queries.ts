@@ -1,0 +1,750 @@
+/**
+ * BASECAMP — typed, server-side READ helpers.
+ * Each awaits createClient() from "@/lib/supabase/server". All helpers tolerate
+ * an empty / unseeded DB by returning null or [] rather than throwing.
+ */
+
+import { createClient } from "@/lib/supabase/server";
+import { todayISO, startOfWeekISO } from "@/lib/format";
+import type {
+  Profile,
+  SessionLog,
+  BlockCompletion,
+  FeedPost,
+  Reaction,
+  BodyMetric,
+  NutritionLog,
+  WaterLog,
+  PR,
+  UserBadge,
+  Badge,
+  Crew,
+  CrewRole,
+  Program,
+  ProgramDay,
+  ProgramBlock,
+  ProgramExercise,
+  ProgramEnrollment,
+  Exercise,
+  Nudge,
+} from "@/lib/types";
+
+// ── Composite result shapes screens consume ──────────────────────────────
+export interface TodaySession {
+  log: SessionLog;
+  blocks: BlockCompletion[];
+}
+
+export interface CrewMate {
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  trainedToday: boolean;
+}
+
+export interface CrewToday {
+  crew: Crew | null;
+  members: CrewMate[];
+  trainedCount: number;
+  totalCount: number;
+  weeklyGoal: number;
+}
+
+export interface FeedItem extends FeedPost {
+  author: { display_name: string; avatar_url: string | null } | null;
+  reactions: Reaction[];
+}
+
+export interface BodyToday {
+  metric: BodyMetric | null;
+  meals: NutritionLog[];
+  water: WaterLog | null;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+export interface Progress {
+  level: number;
+  xp: number;
+  streak: number;
+  sessionsThisWeek: number;
+  weeklyGoal: number;
+  recentSessions: SessionLog[];
+  prs: PR[];
+  badges: Array<UserBadge & { badge: Badge | null }>;
+}
+
+/** A program block plus its ordered exercise rows. */
+export type ProgramBlockWithExercises = ProgramBlock & {
+  exercises: ProgramExercise[];
+};
+
+/** A program day plus its ordered blocks (each with their exercises). */
+export type ProgramDayWithBlocks = ProgramDay & {
+  blocks: ProgramBlockWithExercises[];
+};
+
+/** Full nested authoring tree for a single program. */
+export interface ProgramTree {
+  program: Program;
+  days: ProgramDayWithBlocks[];
+}
+
+/** The active enrollment plus its program and resolved cursor day. */
+export interface ActiveEnrollment {
+  enrollment: ProgramEnrollment;
+  program: Program;
+  currentDay: ProgramDay | null;
+}
+
+/** The day Today should drive, plus its ordered blocks. */
+export interface TodayDay {
+  day: ProgramDay;
+  blocks: ProgramBlock[];
+  /** The enrolled program this day belongs to (convenience for the Today hero). */
+  program: Program | null;
+  /** Flattened `day.title` (convenience accessor for callers). */
+  title: string;
+  /** Flattened `day.est_minutes` (convenience accessor for callers). */
+  estMinutes: number | null;
+  /** Flattened `day.video_url` (convenience accessor for callers). */
+  videoUrl: string | null;
+}
+
+/** A nudge with the sender's basic profile (null if the sender is gone). */
+export type NudgeWithSender = Nudge & {
+  from: { display_name: string; avatar_url: string | null } | null;
+  /** Convenience: sender's display name, or a friendly fallback. */
+  fromName: string;
+};
+
+/** A crew the user belongs to, plus their role and the crew's member count. */
+export type MyCrew = Crew & {
+  /** The current user's role in this crew. */
+  role: CrewRole;
+  /** Total members in the crew. */
+  memberCount: number;
+};
+
+/** Resolve the current authenticated user id, or null if signed out. */
+async function currentUserId(): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
+
+/**
+ * Resolve which crew to surface for a user: their `profiles.active_crew_id`
+ * when set and still a valid membership, otherwise their first membership by
+ * `joined_at`. Returns null when the user belongs to no crews.
+ */
+async function resolveActiveCrewId(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  uid: string,
+): Promise<string | null> {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("active_crew_id")
+    .eq("id", uid)
+    .maybeSingle();
+
+  const preferred = (profile?.active_crew_id as string | null) ?? null;
+  if (preferred) {
+    // Confirm the pointer still references a crew the user belongs to.
+    const { data: valid } = await supabase
+      .from("crew_members")
+      .select("crew_id")
+      .eq("user_id", uid)
+      .eq("crew_id", preferred)
+      .maybeSingle();
+    if (valid) return preferred;
+  }
+
+  // Fall back to the earliest-joined membership.
+  const { data: first } = await supabase
+    .from("crew_members")
+    .select("crew_id")
+    .eq("user_id", uid)
+    .order("joined_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return (first?.crew_id as string | null) ?? null;
+}
+
+// ── getProfile ────────────────────────────────────────────────────────────
+export async function getProfile(): Promise<Profile | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (error || !data) return null;
+
+  // Return the raw row; appearance is normalized by ThemeProvider in the
+  // (app) layout, so we no longer re-resolve it here.
+  return data as Profile;
+}
+
+// ── getTodaySession ────────────────────────────────────────────────────────
+export async function getTodaySession(userId?: string): Promise<TodaySession | null> {
+  const supabase = await createClient();
+  const uid = userId ?? (await currentUserId());
+  if (!uid) return null;
+
+  const { data: log, error } = await supabase
+    .from("session_logs")
+    .select("*")
+    .eq("user_id", uid)
+    .eq("date", todayISO())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !log) return null;
+
+  const { data: blocks } = await supabase
+    .from("block_completions")
+    .select("*")
+    .eq("session_log_id", log.id)
+    .order("order", { ascending: true });
+
+  return { log: log as SessionLog, blocks: (blocks ?? []) as BlockCompletion[] };
+}
+
+// ── getCrewToday ───────────────────────────────────────────────────────────
+export async function getCrewToday(userId?: string): Promise<CrewToday> {
+  const empty: CrewToday = {
+    crew: null,
+    members: [],
+    trainedCount: 0,
+    totalCount: 0,
+    weeklyGoal: 0,
+  };
+  const supabase = await createClient();
+  const uid = userId ?? (await currentUserId());
+  if (!uid) return empty;
+
+  // Honor the user's active-crew pointer; fall back to first membership.
+  const crewId = await resolveActiveCrewId(supabase, uid);
+  if (!crewId) return empty;
+
+  const { data: crew } = await supabase
+    .from("crews")
+    .select("*")
+    .eq("id", crewId)
+    .maybeSingle();
+
+  const { data: rows } = await supabase
+    .from("crew_members")
+    .select("user_id, profiles ( display_name, avatar_url )")
+    .eq("crew_id", crewId);
+
+  // The untyped Supabase client infers an embedded relation as an array; we
+  // know `profiles` is a single row here, so reshape via `unknown`.
+  const memberRows = (rows ?? []) as unknown as Array<{
+    user_id: string;
+    profiles: { display_name: string; avatar_url: string | null } | null;
+  }>;
+  const memberIds = memberRows.map((r) => r.user_id);
+
+  // Who has a completed session today?
+  let trainedIds = new Set<string>();
+  if (memberIds.length) {
+    const { data: trained } = await supabase
+      .from("session_logs")
+      .select("user_id")
+      .in("user_id", memberIds)
+      .eq("date", todayISO())
+      .eq("completed", true);
+    trainedIds = new Set((trained ?? []).map((t) => t.user_id as string));
+  }
+
+  const members: CrewMate[] = memberRows.map((r) => ({
+    user_id: r.user_id,
+    display_name: r.profiles?.display_name ?? "Athlete",
+    avatar_url: r.profiles?.avatar_url ?? null,
+    trainedToday: trainedIds.has(r.user_id),
+  }));
+
+  return {
+    crew: (crew as Crew) ?? null,
+    members,
+    trainedCount: trainedIds.size,
+    totalCount: members.length,
+    weeklyGoal: (crew as Crew)?.weekly_goal ?? 0,
+  };
+}
+
+// ── getFeed ────────────────────────────────────────────────────────────────
+export async function getFeed(crewId: string, limit = 30): Promise<FeedItem[]> {
+  if (!crewId) return [];
+  const supabase = await createClient();
+
+  const { data: posts, error } = await supabase
+    .from("feed_posts")
+    .select("*, author:profiles!feed_posts_user_id_fkey ( display_name, avatar_url )")
+    .eq("crew_id", crewId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error || !posts?.length) return [];
+
+  const ids = posts.map((p) => p.id as string);
+  const { data: reactions } = await supabase
+    .from("reactions")
+    .select("*")
+    .in("post_id", ids);
+
+  const byPost = new Map<string, Reaction[]>();
+  for (const r of (reactions ?? []) as Reaction[]) {
+    const list = byPost.get(r.post_id) ?? [];
+    list.push(r);
+    byPost.set(r.post_id, list);
+  }
+
+  return posts.map((p) => {
+    const { author, ...rest } = p as FeedPost & {
+      author: { display_name: string; avatar_url: string | null } | null;
+    };
+    return {
+      ...(rest as FeedPost),
+      author: author ?? null,
+      reactions: byPost.get(p.id as string) ?? [],
+    };
+  });
+}
+
+// ── getBodyToday ───────────────────────────────────────────────────────────
+export async function getBodyToday(userId?: string): Promise<BodyToday> {
+  const empty: BodyToday = {
+    metric: null,
+    meals: [],
+    water: null,
+    kcal: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+  };
+  const supabase = await createClient();
+  const uid = userId ?? (await currentUserId());
+  if (!uid) return empty;
+
+  const date = todayISO();
+
+  const [{ data: metric }, { data: meals }, { data: water }] = await Promise.all([
+    supabase.from("body_metrics").select("*").eq("user_id", uid).eq("date", date).maybeSingle(),
+    supabase.from("nutrition_logs").select("*").eq("user_id", uid).eq("date", date),
+    supabase.from("water_logs").select("*").eq("user_id", uid).eq("date", date).maybeSingle(),
+  ]);
+
+  const mealList = (meals ?? []) as NutritionLog[];
+  const totals = mealList.reduce(
+    (acc, m) => {
+      acc.kcal += m.kcal ?? 0;
+      acc.protein += m.protein ?? 0;
+      acc.carbs += m.carbs ?? 0;
+      acc.fat += m.fat ?? 0;
+      return acc;
+    },
+    { kcal: 0, protein: 0, carbs: 0, fat: 0 },
+  );
+
+  return {
+    metric: (metric as BodyMetric) ?? null,
+    meals: mealList,
+    water: (water as WaterLog) ?? null,
+    ...totals,
+  };
+}
+
+// ── getProgress ────────────────────────────────────────────────────────────
+export async function getProgress(userId?: string): Promise<Progress> {
+  const empty: Progress = {
+    level: 1,
+    xp: 0,
+    streak: 0,
+    sessionsThisWeek: 0,
+    weeklyGoal: 0,
+    recentSessions: [],
+    prs: [],
+    badges: [],
+  };
+  const supabase = await createClient();
+  const uid = userId ?? (await currentUserId());
+  if (!uid) return empty;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("level, xp, streak_count")
+    .eq("id", uid)
+    .maybeSingle();
+
+  const weekStart = startOfWeekISO();
+
+  // Honor the active-crew pointer (falls back to first membership) for the goal.
+  const crewId = await resolveActiveCrewId(supabase, uid);
+
+  const [{ data: weekSessions }, { data: recent }, { data: prs }, { data: badges }, { data: crew }] =
+    await Promise.all([
+      supabase
+        .from("session_logs")
+        .select("id")
+        .eq("user_id", uid)
+        .eq("completed", true)
+        .gte("date", weekStart),
+      supabase
+        .from("session_logs")
+        .select("*")
+        .eq("user_id", uid)
+        .eq("completed", true)
+        .order("date", { ascending: false })
+        .limit(20),
+      supabase
+        .from("prs")
+        .select("*")
+        .eq("user_id", uid)
+        .order("achieved_on", { ascending: false })
+        .limit(20),
+      supabase
+        .from("user_badges")
+        .select("*, badge:badges ( key, name, emoji, description )")
+        .eq("user_id", uid)
+        .order("earned_on", { ascending: false }),
+      crewId
+        ? supabase.from("crews").select("weekly_goal").eq("id", crewId).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+
+  const weeklyGoal = (crew as { weekly_goal: number } | null)?.weekly_goal ?? 0;
+
+  return {
+    level: profile?.level ?? 1,
+    xp: profile?.xp ?? 0,
+    streak: profile?.streak_count ?? 0,
+    sessionsThisWeek: (weekSessions ?? []).length,
+    weeklyGoal,
+    recentSessions: (recent ?? []) as SessionLog[],
+    prs: (prs ?? []) as PR[],
+    badges: (badges ?? []) as Array<UserBadge & { badge: Badge | null }>,
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// PROGRAM AUTHORING / LIBRARY (0002)
+// ════════════════════════════════════════════════════════════════════════
+
+/** Sort comparator: program days by phase → week → day → order. */
+function byDayOrder(a: ProgramDay, b: ProgramDay): number {
+  return (
+    a.phase - b.phase ||
+    a.week - b.week ||
+    a.day - b.day ||
+    a.order - b.order
+  );
+}
+
+// ── listMyPrograms ──────────────────────────────────────────────────────────
+/** Programs owned by the current user (newest first). */
+export async function listMyPrograms(): Promise<Program[]> {
+  const supabase = await createClient();
+  const uid = await currentUserId();
+  if (!uid) return [];
+
+  const { data, error } = await supabase
+    .from("programs")
+    .select("*")
+    .eq("owner_id", uid)
+    .order("created_at", { ascending: false });
+  if (error || !data) return [];
+  return data as Program[];
+}
+
+// ── listPublicPrograms ──────────────────────────────────────────────────────
+/** Public/template programs (e.g. the seeded MTNTOUGH plan) to fork or follow. */
+export async function listPublicPrograms(): Promise<Program[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("programs")
+    .select("*")
+    .eq("is_public", true)
+    .order("created_at", { ascending: false });
+  if (error || !data) return [];
+  return data as Program[];
+}
+
+// ── getProgram ──────────────────────────────────────────────────────────────
+/** A single program by id (RLS limits this to public-or-owned), or null. */
+export async function getProgram(id: string): Promise<Program | null> {
+  if (!id) return null;
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("programs")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as Program;
+}
+
+// ── getProgramDays ──────────────────────────────────────────────────────────
+/** A program's days, ordered phase → week → day → order. */
+export async function getProgramDays(programId: string): Promise<ProgramDay[]> {
+  if (!programId) return [];
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("program_days")
+    .select("*")
+    .eq("program_id", programId)
+    .order("phase", { ascending: true })
+    .order("week", { ascending: true })
+    .order("day", { ascending: true })
+    .order("order", { ascending: true });
+  if (error || !data) return [];
+  return data as ProgramDay[];
+}
+
+// ── getProgramTree ──────────────────────────────────────────────────────────
+/**
+ * Full nested authoring tree for a program: days (ordered phase→week→day→order)
+ * → blocks (ordered) → exercises (ordered). Returns null if the program is not
+ * visible/found. Tolerates empty days/blocks (returns empty arrays).
+ */
+export async function getProgramTree(programId: string): Promise<ProgramTree | null> {
+  if (!programId) return null;
+  const supabase = await createClient();
+
+  const program = await getProgram(programId);
+  if (!program) return null;
+
+  const days = await getProgramDays(programId);
+  if (!days.length) return { program, days: [] };
+
+  const dayIds = days.map((d) => d.id);
+  const { data: blockRows } = await supabase
+    .from("program_blocks")
+    .select("*")
+    .in("program_day_id", dayIds)
+    .order("order", { ascending: true });
+  const blocks = (blockRows ?? []) as ProgramBlock[];
+
+  const blockIds = blocks.map((b) => b.id);
+  let exercises: ProgramExercise[] = [];
+  if (blockIds.length) {
+    const { data: exRows } = await supabase
+      .from("program_exercises")
+      .select("*")
+      .in("program_block_id", blockIds)
+      .order("order", { ascending: true });
+    exercises = (exRows ?? []) as ProgramExercise[];
+  }
+
+  // Group children under parents, preserving the queried order.
+  const exByBlock = new Map<string, ProgramExercise[]>();
+  for (const ex of exercises) {
+    const list = exByBlock.get(ex.program_block_id) ?? [];
+    list.push(ex);
+    exByBlock.set(ex.program_block_id, list);
+  }
+
+  const blocksByDay = new Map<string, ProgramBlockWithExercises[]>();
+  for (const b of blocks) {
+    const list = blocksByDay.get(b.program_day_id) ?? [];
+    list.push({ ...b, exercises: exByBlock.get(b.id) ?? [] });
+    blocksByDay.set(b.program_day_id, list);
+  }
+
+  const tree: ProgramDayWithBlocks[] = [...days]
+    .sort(byDayOrder)
+    .map((d) => ({ ...d, blocks: blocksByDay.get(d.id) ?? [] }));
+
+  return { program, days: tree };
+}
+
+// ── getActiveEnrollment ─────────────────────────────────────────────────────
+/**
+ * The current user's single active enrollment, with its program and the
+ * resolved cursor day (the row pointed to by `current_day_id`, or null).
+ */
+export async function getActiveEnrollment(userId?: string): Promise<ActiveEnrollment | null> {
+  const supabase = await createClient();
+  const uid = userId ?? (await currentUserId());
+  if (!uid) return null;
+
+  const { data: enrollment } = await supabase
+    .from("program_enrollments")
+    .select("*")
+    .eq("user_id", uid)
+    .eq("status", "active")
+    .maybeSingle();
+  if (!enrollment) return null;
+
+  const program = await getProgram((enrollment as ProgramEnrollment).program_id);
+  if (!program) return null;
+
+  let currentDay: ProgramDay | null = null;
+  const cursor = (enrollment as ProgramEnrollment).current_day_id;
+  if (cursor) {
+    const { data: day } = await supabase
+      .from("program_days")
+      .select("*")
+      .eq("id", cursor)
+      .maybeSingle();
+    currentDay = (day as ProgramDay) ?? null;
+  }
+
+  return { enrollment: enrollment as ProgramEnrollment, program, currentDay };
+}
+
+// ── resolveTodayDay ─────────────────────────────────────────────────────────
+/**
+ * The program day that Today should drive for the current user: the active
+ * enrollment's `current_day_id`, falling back to the lowest-ordered day of the
+ * enrolled program when the cursor is null. Returns the day plus its ordered
+ * blocks, or null if the user has no active enrollment / the program has no days.
+ */
+export async function resolveTodayDay(userId?: string): Promise<TodayDay | null> {
+  const supabase = await createClient();
+
+  const active = await getActiveEnrollment(userId);
+  if (!active) return null;
+
+  let day = active.currentDay;
+  if (!day) {
+    // Fall back to the first day (phase→week→day→order) of the program.
+    const days = await getProgramDays(active.program.id);
+    day = days[0] ?? null;
+  }
+  if (!day) return null;
+
+  const { data: blocks } = await supabase
+    .from("program_blocks")
+    .select("*")
+    .eq("program_day_id", day.id)
+    .order("order", { ascending: true });
+
+  return {
+    day,
+    blocks: (blocks ?? []) as ProgramBlock[],
+    program: active.program,
+    title: day.title,
+    estMinutes: day.est_minutes,
+    videoUrl: day.video_url,
+  };
+}
+
+// ── listExercises ───────────────────────────────────────────────────────────
+/** Exercise library visible to the user (public or owned), ordered by name. */
+export async function listExercises(): Promise<Exercise[]> {
+  const supabase = await createClient();
+  // RLS already limits rows to public-or-owned; no extra filter needed.
+  const { data, error } = await supabase
+    .from("exercises")
+    .select("*")
+    .order("name", { ascending: true });
+  if (error || !data) return [];
+  return data as Exercise[];
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// CREW SWITCHING + NUDGES (0002)
+// ════════════════════════════════════════════════════════════════════════
+
+// ── listMyCrews ─────────────────────────────────────────────────────────────
+/**
+ * Every crew the current user belongs to (via crew_members), ordered by
+ * joined_at, each enriched with the user's role and the crew's member count —
+ * the shape the crew switcher consumes.
+ */
+export async function listMyCrews(userId?: string): Promise<MyCrew[]> {
+  const supabase = await createClient();
+  const uid = userId ?? (await currentUserId());
+  if (!uid) return [];
+
+  const { data, error } = await supabase
+    .from("crew_members")
+    .select("role, joined_at, crews (*)")
+    .eq("user_id", uid)
+    .order("joined_at", { ascending: true });
+  if (error || !data) return [];
+
+  // The embedded `crews` relation is a single row per membership.
+  const rows = data as unknown as Array<{
+    role: CrewRole;
+    crews: Crew | null;
+  }>;
+  const memberships = rows.filter(
+    (r): r is { role: CrewRole; crews: Crew } => r.crews != null,
+  );
+  if (!memberships.length) return [];
+
+  // Count members per crew (RLS lets a member read fellow members).
+  const crewIds = memberships.map((m) => m.crews.id);
+  const { data: counts } = await supabase
+    .from("crew_members")
+    .select("crew_id")
+    .in("crew_id", crewIds);
+  const memberCount = new Map<string, number>();
+  for (const row of (counts ?? []) as Array<{ crew_id: string }>) {
+    memberCount.set(row.crew_id, (memberCount.get(row.crew_id) ?? 0) + 1);
+  }
+
+  return memberships.map((m) => ({
+    ...m.crews,
+    role: m.role,
+    memberCount: memberCount.get(m.crews.id) ?? 1,
+  }));
+}
+
+// ── getNudges ───────────────────────────────────────────────────────────────
+/** Unseen nudges addressed to the current user, with the sender's profile. */
+export async function getNudges(userId?: string): Promise<NudgeWithSender[]> {
+  const supabase = await createClient();
+  const uid = userId ?? (await currentUserId());
+  if (!uid) return [];
+
+  const { data, error } = await supabase
+    .from("nudges")
+    .select("*, from:profiles!nudges_from_user_fkey ( display_name, avatar_url )")
+    .eq("to_user", uid)
+    .eq("seen", false)
+    .order("created_at", { ascending: false });
+  if (error || !data) return [];
+
+  return data.map((n) => {
+    const { from, ...rest } = n as Nudge & {
+      from: { display_name: string; avatar_url: string | null } | null;
+    };
+    return {
+      ...(rest as Nudge),
+      from: from ?? null,
+      fromName: from?.display_name ?? "A crewmate",
+    };
+  });
+}
+
+// ── getUnseenNudgeCount ─────────────────────────────────────────────────────
+/** Count of unseen nudges to the current user (0 when signed out / none). */
+export async function getUnseenNudgeCount(userId?: string): Promise<number> {
+  const supabase = await createClient();
+  const uid = userId ?? (await currentUserId());
+  if (!uid) return 0;
+
+  const { count, error } = await supabase
+    .from("nudges")
+    .select("id", { count: "exact", head: true })
+    .eq("to_user", uid)
+    .eq("seen", false);
+  if (error) return 0;
+  return count ?? 0;
+}

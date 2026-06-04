@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SUMMIT — Variant 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* SUMMIT — rugged backcountry palette */
+    --bg:#1c1a17;            /* charred bark */
+    --bg2:#262320;
+    --surface:#2f2b26;
+    --surface2:#3a352e;
+    --line:#4a443b;
+    --text:#ece6da;          /* bone */
+    --muted:#9b9082;
+    --faint:#6e655a;
+    --accent:#c8622d;        /* blaze orange (hunter) */
+    --accent2:#7a8b52;       /* moss */
+    --gold:#d9a441;
+    --danger:#b5483a;
+    --radius:6px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    background:#0e0d0c;
+    font-family:'Barlow',system-ui,sans-serif;
+    color:var(--text);
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+    background-image:radial-gradient(circle at 50% 0%, #1a1815 0%, #0a0908 80%);
+  }
+  /* phone frame */
+  .phone{
+    width:390px;height:844px;
+    background:var(--bg);
+    border-radius:42px;
+    border:10px solid #000;
+    box-shadow:0 0 0 2px #2a2722, 0 40px 80px rgba(0,0,0,.6);
+    position:relative;overflow:hidden;
+    display:flex;flex-direction:column;
+  }
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:30px;background:#000;border-radius:0 0 18px 18px;z-index:50}
+  .statusbar{height:46px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 6px;font-size:13px;font-weight:600;font-family:'Oswald';letter-spacing:.5px;color:var(--text);flex-shrink:0}
+
+  .screen-wrap{flex:1;overflow:hidden;position:relative}
+  .screen{position:absolute;inset:0;overflow-y:auto;display:none;padding-bottom:90px}
+  .screen.active{display:block}
+  .screen::-webkit-scrollbar{display:none}
+
+  /* topo texture background */
+  .topo{position:absolute;inset:0;opacity:.06;pointer-events:none;z-index:0}
+
+  /* shared bits */
+  .pad{padding:0 20px}
+  h1.title{font-family:'Oswald';font-weight:700;font-size:30px;letter-spacing:1px;text-transform:uppercase;line-height:1}
+  .eyebrow{font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:3px;font-size:11px;font-weight:600;color:var(--accent)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);position:relative;z-index:1}
+  .stamp{font-family:'Oswald';text-transform:uppercase;letter-spacing:2px}
+
+  /* header */
+  .hd{padding:8px 20px 14px;display:flex;justify-content:space-between;align-items:flex-end;position:relative;z-index:2}
+  .hd .sub{font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-size:11px;margin-bottom:4px}
+  .avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#c8622d,#7a8b52);display:flex;align-items:center;justify-content:center;font-family:'Oswald';font-weight:700;border:2px solid var(--line)}
+
+  /* hero card */
+  .hero{margin:0 20px;height:200px;border-radius:var(--radius);overflow:hidden;position:relative;z-index:1;border:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(28,26,23,.1),rgba(28,26,23,.92)),linear-gradient(135deg,#3c4a3a,#1c1a17 70%);}
+  .hero .ridge{position:absolute;inset:0;opacity:.5}
+  .hero-content{position:absolute;bottom:0;left:0;right:0;padding:18px}
+  .pill{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#1c1a17;font-family:'Oswald';font-weight:600;text-transform:uppercase;letter-spacing:1.5px;font-size:11px;padding:5px 10px;border-radius:3px}
+  .pill.ghost{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+  .progressbar{height:6px;background:rgba(0,0,0,.4);border-radius:3px;overflow:hidden;margin-top:12px;border:1px solid rgba(255,255,255,.06)}
+  .progressbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--gold));}
+
+  .row{display:flex;gap:12px}
+  .stat{flex:1;padding:14px;text-align:left}
+  .stat .num{font-family:'Oswald';font-weight:700;font-size:26px;line-height:1}
+  .stat .lbl{font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:1.5px;font-size:10px;color:var(--muted);margin-top:4px}
+  .stat .num small{font-size:13px;color:var(--muted);font-weight:500}
+
+  .section-h{display:flex;justify-content:space-between;align-items:baseline;margin:24px 20px 12px;position:relative;z-index:1}
+  .section-h .stamp{font-size:14px;letter-spacing:2px}
+  .section-h a{color:var(--accent);font-size:11px;font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:1.5px;text-decoration:none}
+
+  .session-item{display:flex;align-items:center;gap:14px;padding:14px;margin:0 20px 10px}
+  .thumb{width:54px;height:54px;border-radius:4px;flex-shrink:0;background:linear-gradient(135deg,#454d36,#2a2620);display:flex;align-items:center;justify-content:center;border:1px solid var(--line)}
+  .session-item .meta{flex:1;min-width:0}
+  .session-item .nm{font-family:'Oswald';font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:15px}
+  .session-item .dt{font-size:12px;color:var(--muted);margin-top:2px}
+  .tag{font-family:'Barlow Semi Condensed';text-transform:uppercase;font-size:9px;letter-spacing:1px;padding:2px 6px;border-radius:3px;border:1px solid var(--line);color:var(--muted)}
+
+  /* bottom nav */
+  .nav{position:absolute;bottom:0;left:0;right:0;height:78px;background:linear-gradient(180deg,rgba(28,26,23,.6),var(--bg2));border-top:1px solid var(--line);display:flex;z-index:40;backdrop-filter:blur(8px);padding-bottom:14px}
+  .nav button{flex:1;background:none;border:none;color:var(--faint);display:flex;flex-direction:column;align-items:center;gap:5px;padding-top:12px;cursor:pointer;font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:1px;font-size:9px;font-weight:600}
+  .nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+  .nav button.on{color:var(--accent)}
+  .nav button.on svg{stroke:var(--accent)}
+
+  /* TRAIN screen */
+  .block-h{display:flex;align-items:center;gap:10px;margin:18px 20px 10px;position:relative;z-index:1}
+  .block-num{width:28px;height:28px;border-radius:4px;background:var(--accent);color:#1c1a17;display:flex;align-items:center;justify-content:center;font-family:'Oswald';font-weight:700;flex-shrink:0}
+  .ex{margin:0 20px 10px;padding:0;overflow:hidden}
+  .ex-top{padding:14px;display:flex;justify-content:space-between;align-items:center}
+  .ex-top .nm{font-family:'Oswald';font-weight:600;text-transform:uppercase;font-size:16px;letter-spacing:.5px}
+  .ex-top .scheme{font-size:12px;color:var(--accent);font-family:'Barlow Semi Condensed';letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+  .setrow{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line)}
+  .setrow .sn{font-family:'Oswald';font-weight:700;color:var(--faint);width:20px}
+  .setrow .field{flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:4px;padding:8px;text-align:center;font-family:'Oswald';font-weight:600;font-size:16px}
+  .setrow .field small{display:block;font-family:'Barlow Semi Condensed';font-size:8px;color:var(--faint);letter-spacing:1px;text-transform:uppercase;font-weight:600;margin-top:2px}
+  .check{width:34px;height:34px;border-radius:4px;border:1px solid var(--line);background:var(--bg2);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer}
+  .check.done{background:var(--accent2);border-color:var(--accent2)}
+  .check svg{width:18px;height:18px;stroke:#1c1a17;fill:none;stroke-width:3}
+  .timer{margin:0 20px 14px;padding:16px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,var(--surface2),var(--surface))}
+  .timer .t{font-family:'Oswald';font-weight:700;font-size:36px;letter-spacing:2px}
+  .btn{font-family:'Oswald';font-weight:600;text-transform:uppercase;letter-spacing:1.5px;font-size:13px;border:none;border-radius:4px;padding:12px 18px;cursor:pointer;background:var(--accent);color:#1c1a17}
+  .btn.ghost{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+  .cta-bar{margin:18px 20px 0}
+
+  /* BODY screen */
+  .ring-wrap{display:flex;justify-content:center;padding:10px 0 6px}
+  .macro-row{display:flex;gap:10px;margin:0 20px}
+  .macro{flex:1;padding:14px 10px;text-align:center}
+  .macro .num{font-family:'Oswald';font-weight:700;font-size:22px}
+  .macro .lbl{font-family:'Barlow Semi Condensed';text-transform:uppercase;font-size:9px;letter-spacing:1px;color:var(--muted);margin-top:3px}
+  .macro .bar{height:4px;border-radius:2px;background:var(--line);margin-top:8px;overflow:hidden}
+  .macro .bar>i{display:block;height:100%}
+  .logitem{display:flex;align-items:center;gap:12px;padding:13px 14px;margin:0 20px 8px}
+  .logitem .ic{width:38px;height:38px;border-radius:4px;background:var(--bg2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+  .logitem .ic svg{width:20px;height:20px;stroke:var(--accent);fill:none;stroke-width:1.8}
+  .logitem .info{flex:1}
+  .logitem .info .a{font-family:'Oswald';font-weight:600;text-transform:uppercase;font-size:13px;letter-spacing:.5px}
+  .logitem .info .b{font-size:11px;color:var(--muted)}
+  .logitem .val{font-family:'Oswald';font-weight:700;font-size:16px}
+
+  /* PROGRESS */
+  .chart{margin:0 20px;padding:16px;position:relative;z-index:1}
+  .bars{display:flex;align-items:flex-end;gap:8px;height:130px;margin-top:14px}
+  .bars .b{flex:1;background:linear-gradient(180deg,var(--accent),#8a4220);border-radius:3px 3px 0 0;position:relative;min-height:8px}
+  .bars .b span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-family:'Barlow Semi Condensed';font-size:9px;color:var(--faint);text-transform:uppercase}
+  .pr{display:flex;align-items:center;gap:12px;padding:13px 14px;margin:0 20px 8px}
+  .pr .medal{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle,var(--gold),#9c7322);display:flex;align-items:center;justify-content:center;font-family:'Oswald';font-weight:700;color:#1c1a17;flex-shrink:0}
+
+  /* APPEARANCE */
+  .opt{margin:0 20px 10px;padding:16px}
+  .opt .lbl{font-family:'Oswald';font-weight:600;text-transform:uppercase;letter-spacing:1px;font-size:14px;margin-bottom:3px}
+  .opt .desc{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.4}
+  .swatches{display:flex;gap:10px}
+  .sw{width:40px;height:40px;border-radius:6px;cursor:pointer;border:2px solid transparent;position:relative}
+  .sw.sel{border-color:var(--text)}
+  .sw.sel::after{content:'';position:absolute;inset:0;border-radius:4px;border:2px solid var(--bg)}
+  .seg{display:flex;background:var(--bg2);border:1px solid var(--line);border-radius:5px;overflow:hidden}
+  .seg button{flex:1;background:none;border:none;color:var(--muted);padding:10px;font-family:'Oswald';font-weight:600;text-transform:uppercase;letter-spacing:1px;font-size:12px;cursor:pointer}
+  .seg button.on{background:var(--accent);color:#1c1a17}
+  .toggle{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;margin:0 20px 8px}
+  .toggle .lbl{font-family:'Oswald';font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:14px}
+  .toggle .desc{font-size:11px;color:var(--muted);margin-top:2px}
+  .sw-toggle{width:48px;height:27px;border-radius:14px;background:var(--line);position:relative;flex-shrink:0;cursor:pointer;transition:.2s}
+  .sw-toggle.on{background:var(--accent2)}
+  .sw-toggle i{position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:var(--text);transition:.2s}
+  .sw-toggle.on i{left:24px}
+  .widget-chip{display:flex;align-items:center;gap:10px;padding:12px 14px;margin:0 20px 8px;cursor:grab}
+  .widget-chip .grip{color:var(--faint);font-size:18px;letter-spacing:-3px}
+
+  .reorder-note{margin:0 20px 14px;font-size:11px;color:var(--faint);font-style:italic}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="notch"></div>
+  <div class="statusbar"><span>6:14</span><span>SUMMIT</span><span>▲ 64%</span></div>
+
+  <div class="screen-wrap">
+
+    <!-- ============ TODAY ============ -->
+    <section class="screen active" id="s-today">
+      <svg class="topo" viewBox="0 0 390 844" preserveAspectRatio="none"><g fill="none" stroke="#c8622d" stroke-width="1">
+        <path d="M-20 120 Q120 40 260 120 T560 120"/><path d="M-20 160 Q120 90 260 160 T560 160"/>
+        <path d="M-20 200 Q120 140 260 200 T560 200"/><path d="M-20 420 Q140 360 280 430 T580 420"/>
+        <path d="M-20 460 Q140 410 280 470 T580 460"/><path d="M-20 680 Q120 620 260 690 T560 680"/>
+        <path d="M-20 720 Q120 670 260 730 T560 720"/></g></svg>
+
+      <div class="hd">
+        <div><div class="sub">Phase 2 · Week 3 · Day 4</div><h1 class="title">Today</h1></div>
+        <div class="avatar">TH</div>
+      </div>
+
+      <div class="hero">
+        <svg class="ridge" viewBox="0 0 390 200" preserveAspectRatio="none"><polygon points="0,200 0,130 70,70 130,110 200,40 270,95 340,55 390,100 390,200" fill="#1c1a17" opacity=".55"/><polygon points="0,200 0,150 90,100 160,135 240,80 320,120 390,90 390,200" fill="#0e0d0c" opacity=".5"/></svg>
+        <div class="hero-content">
+          <span class="pill">● Today's Session</span>
+          <div style="font-family:'Oswald';font-weight:700;font-size:24px;text-transform:uppercase;letter-spacing:1px;margin-top:10px">Lower Body Strength + Ruck</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">MTNTOUGH · Backcountry Athlete · ~58 min</div>
+          <div class="progressbar"><i style="width:64%"></i></div>
+          <div style="font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:1px;font-size:10px;color:var(--muted);margin-top:6px">Program 64% complete · 18 of 28 sessions</div>
+        </div>
+      </div>
+
+      <div class="row pad" style="margin-top:16px">
+        <div class="card stat"><div class="num">182<small>lb</small></div><div class="lbl">Bodyweight</div></div>
+        <div class="card stat"><div class="num">2,140</div><div class="lbl">Kcal in</div></div>
+        <div class="card stat"><div class="num">14</div><div class="lbl">Day streak</div></div>
+      </div>
+
+      <div class="section-h"><span class="stamp">Up Next</span><a href="#">Full Plan →</a></div>
+      <div class="card session-item">
+        <div class="thumb"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c8622d" stroke-width="1.8"><path d="M6 12h12M4 9v6M20 9v6M8 6v12M16 6v12"/></svg></div>
+        <div class="meta"><div class="nm">Back Squat — 5×5</div><div class="dt">Strength Block A · @ 245 lb target</div></div>
+        <span class="tag">Strength</span>
+      </div>
+      <div class="card session-item">
+        <div class="thumb"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7a8b52" stroke-width="1.8"><path d="M4 20l5-9 4 5 7-11"/><circle cx="20" cy="5" r="1.5"/></svg></div>
+        <div class="meta"><div class="nm">Weighted Ruck</div><div class="dt">3 mi · 35 lb pack · Z2 effort</div></div>
+        <span class="tag">Conditioning</span>
+      </div>
+      <div class="card session-item">
+        <div class="thumb"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d9a441" stroke-width="1.8"><path d="M12 3v9l5 3"/><circle cx="12" cy="12" r="9"/></svg></div>
+        <div class="meta"><div class="nm">Mobility Flush</div><div class="dt">8 min · Hips & T-spine</div></div>
+        <span class="tag">Recovery</span>
+      </div>
+
+      <div class="cta-bar"><button class="btn" style="width:100%" onclick="go('train')">▶ Begin Session</button></div>
+    </section>
+
+    <!-- ============ TRAIN ============ -->
+    <section class="screen" id="s-train">
+      <div class="hd"><div><div class="sub">Strength Block A</div><h1 class="title">Train</h1></div><span class="pill ghost">Live</span></div>
+
+      <div class="card timer">
+        <div><div style="font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:2px;font-size:10px;color:var(--muted)">Rest Timer</div><div class="t">1:32</div></div>
+        <button class="btn ghost">Skip Rest</button>
+      </div>
+
+      <div class="block-h"><div class="block-num">A</div><span class="stamp" style="font-size:15px">Back Squat</span></div>
+      <div class="card ex">
+        <div class="ex-top"><div><div class="nm">Back Squat</div><div class="scheme">5 sets × 5 reps · RPE 8</div></div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c8622d" stroke-width="1.6"><path d="M8 5v14l11-7z"/></svg></div>
+        <div class="setrow"><span class="sn">1</span><div class="field">245<small>lb</small></div><div class="field">5<small>reps</small></div><div class="check done"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div></div>
+        <div class="setrow"><span class="sn">2</span><div class="field">245<small>lb</small></div><div class="field">5<small>reps</small></div><div class="check done"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div></div>
+        <div class="setrow"><span class="sn">3</span><div class="field">245<small>lb</small></div><div class="field">5<small>reps</small></div><div class="check"></div></div>
+        <div class="setrow"><span class="sn">4</span><div class="field" style="color:var(--faint)">—<small>lb</small></div><div class="field" style="color:var(--faint)">—<small>reps</small></div><div class="check"></div></div>
+      </div>
+
+      <div class="block-h"><div class="block-num">B</div><span class="stamp" style="font-size:15px">Conditioning — Ruck</span></div>
+      <div class="card ex">
+        <div class="ex-top"><div><div class="nm">Weighted Ruck</div><div class="scheme">3 mi · 35 lb · Zone 2</div></div></div>
+        <div class="setrow"><span class="sn">⏱</span><div class="field">32:18<small>time</small></div><div class="field">2.4<small>miles</small></div><div class="field">142<small>avg hr</small></div></div>
+      </div>
+
+      <div class="cta-bar" style="display:flex;gap:10px"><button class="btn ghost" style="flex:1">Add Note</button><button class="btn" style="flex:2" onclick="go('today')">Finish Session ▲</button></div>
+    </section>
+
+    <!-- ============ BODY & FUEL ============ -->
+    <section class="screen" id="s-body">
+      <div class="hd"><div><div class="sub">June 3 · Tuesday</div><h1 class="title">Body & Fuel</h1></div><span class="pill">+ Log</span></div>
+
+      <div class="card" style="margin:0 20px">
+        <div class="ring-wrap">
+          <svg width="150" height="150" viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="62" fill="none" stroke="#3a352e" stroke-width="14"/>
+            <circle cx="75" cy="75" r="62" fill="none" stroke="#c8622d" stroke-width="14" stroke-linecap="round" stroke-dasharray="389" stroke-dashoffset="140" transform="rotate(-90 75 75)"/>
+            <text x="75" y="70" text-anchor="middle" font-family="Oswald" font-weight="700" font-size="30" fill="#ece6da">2140</text>
+            <text x="75" y="90" text-anchor="middle" font-family="Barlow Semi Condensed" font-size="11" letter-spacing="2" fill="#9b9082">OF 2700 KCAL</text>
+          </svg>
+        </div>
+        <div class="macro-row" style="padding-bottom:16px">
+          <div class="macro"><div class="num">168<span style="font-size:12px;color:var(--muted)">g</span></div><div class="lbl">Protein</div><div class="bar"><i style="width:82%;background:#c8622d"></i></div></div>
+          <div class="macro"><div class="num">196<span style="font-size:12px;color:var(--muted)">g</span></div><div class="lbl">Carbs</div><div class="bar"><i style="width:60%;background:#d9a441"></i></div></div>
+          <div class="macro"><div class="num">62<span style="font-size:12px;color:var(--muted)">g</span></div><div class="lbl">Fat</div><div class="bar"><i style="width:70%;background:#7a8b52"></i></div></div>
+        </div>
+      </div>
+
+      <div class="section-h"><span class="stamp">Body Metrics</span><a href="#">History →</a></div>
+      <div class="card logitem"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h18M12 3v18"/><circle cx="12" cy="12" r="9"/></svg></div><div class="info"><div class="a">Bodyweight</div><div class="b">▼ 1.2 lb this week</div></div><div class="val">182.0 lb</div></div>
+      <div class="card logitem"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></div><div class="info"><div class="a">Waist</div><div class="b">Logged 2 days ago</div></div><div class="val">33.5 in</div></div>
+      <div class="card logitem"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 2v6M12 16v6M5 12H2M22 12h-3"/><circle cx="12" cy="12" r="4"/></svg></div><div class="info"><div class="a">Body Fat</div><div class="b">Calipers · est.</div></div><div class="val">14.8%</div></div>
+
+      <div class="section-h"><span class="stamp">Today's Fuel</span><a href="#">+ Add Meal</a></div>
+      <div class="card logitem"><div class="ic"><svg viewBox="0 0 24 24"><path d="M5 3v18M5 8h6M11 3v18M19 3c-2 4-2 7 0 10v8"/></svg></div><div class="info"><div class="a">Breakfast</div><div class="b">Eggs, oats, berries</div></div><div class="val">620</div></div>
+      <div class="card logitem"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg></div><div class="info"><div class="a">Lunch</div><div class="b">Elk, rice, greens</div></div><div class="val">810</div></div>
+      <div class="card logitem"><div class="ic"><svg viewBox="0 0 24 24"><path d="M7 11V7a5 5 0 0110 0v4M5 11h14l-1 9H6z"/></svg></div><div class="info"><div class="a">Water</div><div class="b">2.4 / 3.5 L</div></div><div class="val">2.4 L</div></div>
+    </section>
+
+    <!-- ============ PROGRESS ============ -->
+    <section class="screen" id="s-progress">
+      <div class="hd"><div><div class="sub">Last 7 weeks</div><h1 class="title">Progress</h1></div></div>
+
+      <div class="card chart">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="stamp" style="font-size:13px">Training Volume</span><span style="font-family:'Oswald';font-weight:700;font-size:20px">▲ 11%</span></div>
+        <div style="font-size:11px;color:var(--muted)">Total weekly tonnage (lb × reps)</div>
+        <div class="bars">
+          <div class="b" style="height:45%"><span>W1</span></div><div class="b" style="height:55%"><span>W2</span></div>
+          <div class="b" style="height:50%"><span>W3</span></div><div class="b" style="height:70%"><span>W4</span></div>
+          <div class="b" style="height:65%"><span>W5</span></div><div class="b" style="height:85%"><span>W6</span></div>
+          <div class="b" style="height:100%"><span>W7</span></div>
+        </div>
+      </div>
+
+      <div class="section-h"><span class="stamp">Recent PRs</span><a href="#">All →</a></div>
+      <div class="card pr"><div class="medal">PR</div><div class="info" style="flex:1"><div style="font-family:'Oswald';font-weight:600;text-transform:uppercase;font-size:14px">Back Squat 1RM</div><div style="font-size:11px;color:var(--muted)">May 28 · +15 lb</div></div><div style="font-family:'Oswald';font-weight:700;font-size:20px">315 lb</div></div>
+      <div class="card pr"><div class="medal">PR</div><div class="info" style="flex:1"><div style="font-family:'Oswald';font-weight:600;text-transform:uppercase;font-size:14px">Ruck 3mi Time</div><div style="font-size:11px;color:var(--muted)">May 24 · −1:40</div></div><div style="font-family:'Oswald';font-weight:700;font-size:20px">38:20</div></div>
+      <div class="card pr"><div class="medal">PR</div><div class="info" style="flex:1"><div style="font-family:'Oswald';font-weight:600;text-transform:uppercase;font-size:14px">Pull-ups</div><div style="font-size:11px;color:var(--muted)">May 20 · +3 reps</div></div><div style="font-family:'Oswald';font-weight:700;font-size:20px">19</div></div>
+    </section>
+
+    <!-- ============ APPEARANCE ============ -->
+    <section class="screen" id="s-look">
+      <div class="hd"><div><div class="sub">Configure your app</div><h1 class="title">Appearance</h1></div></div>
+
+      <div class="card opt">
+        <div class="lbl">Accent Color</div>
+        <div class="desc">Drives buttons, highlights, and your progress rings.</div>
+        <div class="swatches">
+          <div class="sw sel" style="background:#c8622d"></div>
+          <div class="sw" style="background:#7a8b52"></div>
+          <div class="sw" style="background:#d9a441"></div>
+          <div class="sw" style="background:#b5483a"></div>
+          <div class="sw" style="background:#5a7d8c"></div>
+        </div>
+      </div>
+
+      <div class="card opt">
+        <div class="lbl">Theme</div>
+        <div class="desc">SUMMIT ships dark-first for low-light field use.</div>
+        <div class="seg"><button class="on">Trailhead Dark</button><button>Alpine Light</button><button>Auto</button></div>
+      </div>
+
+      <div class="card opt">
+        <div class="lbl">Typography Scale</div>
+        <div class="desc">Condensed display type at three densities.</div>
+        <div class="seg"><button>Compact</button><button class="on">Standard</button><button>Large</button></div>
+      </div>
+
+      <div class="card opt">
+        <div class="lbl">Units</div>
+        <div class="desc">Applies across training, body, and fuel.</div>
+        <div class="seg"><button class="on">Imperial</button><button>Metric</button></div>
+      </div>
+
+      <div class="card toggle"><div><div class="lbl">Topographic Texture</div><div class="desc">Subtle contour lines behind screens</div></div><div class="sw-toggle on" onclick="this.classList.toggle('on')"><i></i></div></div>
+      <div class="card toggle"><div><div class="lbl">Haptic Feedback</div><div class="desc">Buzz on set completion & PRs</div></div><div class="sw-toggle on" onclick="this.classList.toggle('on')"><i></i></div></div>
+      <div class="card toggle"><div><div class="lbl">Big-Glove Mode</div><div class="desc">Oversized tap targets for cold-weather use</div></div><div class="sw-toggle" onclick="this.classList.toggle('on')"><i></i></div></div>
+
+      <div class="section-h"><span class="stamp">Dashboard Widgets</span><a href="#">Reset</a></div>
+      <div class="reorder-note">Drag to reorder what shows on Today.</div>
+      <div class="card widget-chip"><span class="grip">⠿</span><span style="font-family:'Oswald';text-transform:uppercase;font-size:14px;flex:1">Today's Session</span><div class="sw-toggle on"><i></i></div></div>
+      <div class="card widget-chip"><span class="grip">⠿</span><span style="font-family:'Oswald';text-transform:uppercase;font-size:14px;flex:1">Quick Stats</span><div class="sw-toggle on"><i></i></div></div>
+      <div class="card widget-chip"><span class="grip">⠿</span><span style="font-family:'Oswald';text-transform:uppercase;font-size:14px;flex:1">Up Next</span><div class="sw-toggle on"><i></i></div></div>
+      <div class="card widget-chip"><span class="grip">⠿</span><span style="font-family:'Oswald';text-transform:uppercase;font-size:14px;flex:1">Fuel Ring</span><div class="sw-toggle" onclick="this.classList.toggle('on')"><i></i></div></div>
+    </section>
+
+  </div>
+
+  <nav class="nav">
+    <button class="on" data-s="today" onclick="go('today')"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>Today</button>
+    <button data-s="train" onclick="go('train')"><svg viewBox="0 0 24 24"><path d="M6 12h12M4 9v6M20 9v6M8 6v12M16 6v12"/></svg>Train</button>
+    <button data-s="body" onclick="go('body')"><svg viewBox="0 0 24 24"><circle cx="12" cy="6" r="3"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>Body</button>
+    <button data-s="progress" onclick="go('progress')"><svg viewBox="0 0 24 24"><path d="M4 20V8M10 20V4M16 20v-8M22 20h-20"/></svg>Progress</button>
+    <button data-s="look" onclick="go('look')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>Look</button>
+  </nav>
+</div>
+<script>
+  function go(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('s-'+id).classList.add('active');
+    document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.s===id));
+    document.querySelector('.screen.active').scrollTop=0;
+  }
+  document.querySelectorAll('.check').forEach(c=>c.addEventListener('click',()=>{
+    c.classList.toggle('done');
+    if(c.classList.contains('done')&&!c.querySelector('svg')){c.innerHTML='<svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>'}
+  }));
+  document.querySelectorAll('.swatches').forEach(g=>g.querySelectorAll('.sw').forEach(s=>s.addEventListener('click',()=>{g.querySelectorAll('.sw').forEach(x=>x.classList.remove('sel'));s.classList.add('sel')})));
+  document.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{g.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on')})));
+</script>
+</body>
+</html>

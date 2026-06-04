@@ -1,0 +1,35 @@
+# ════════════════════════════════════════════════════════════════════
+# BASECAMP — Docker Compose
+#
+#   docker compose up --build      # build the image and run it
+#
+# Reads configuration from a local .env file (NOT committed). The NEXT_PUBLIC_*
+# values are needed at *build* time (Next.js inlines them into the client
+# bundle), so they are passed as build args AND surfaced as runtime env.
+# Copy .env.example → .env and fill it in first.
+# ════════════════════════════════════════════════════════════════════
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Inlined into the client bundle at build time.
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+    image: basecamp:latest
+    container_name: basecamp
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    # Runtime env. Server-only secrets (e.g. SUPABASE_SERVICE_ROLE_KEY) live in
+    # .env and are read by the server process; they never reach the browser.
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"

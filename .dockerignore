@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.gitignore
+*.md
+design-prototypes
+.env
+.env*.local
+!.env.example
+npm-debug.log*
+pnpm-debug.log*
+.DS_Store
+coverage
+supabase/.branches
+supabase/.temp
+.workflows
+tooling

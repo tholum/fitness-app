@@ -1,0 +1,13 @@
+# Single-package repo. This file exists primarily to enable pnpm's
+# supply-chain "cooldown" setting below.
+packages:
+  - "."
+
+# ── Supply-chain hardening ──────────────────────────────────────────────
+# Never resolve to a package version published less than 2 days ago.
+# 2880 minutes = 48 hours. pnpm (>= 10.16) will pick the newest version
+# that is at least this old, protecting against freshly-published
+# malicious releases that haven't been caught/yanked yet.
+minimumReleaseAge: 2880
+# Add package names here if you ever need to bypass the cooldown for one:
+minimumReleaseAgeExclude: []

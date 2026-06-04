@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BASECAMP — SUMMIT colors × FORGE layout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* SUMMIT palette */
+    --bg:#1c1a17;
+    --bg2:#10100c;
+    --surface:rgba(255,255,255,.045);
+    --surface-solid:#2f2b26;
+    --surface2:#3a352e;
+    --line:rgba(255,255,255,.10);
+    --line-solid:#4a443b;
+    --text:#ece6da;
+    --muted:#9b9082;
+    --faint:#6e655a;
+    --accent:#c8622d;   /* blaze */
+    --accent2:#7a8b52;  /* moss */
+    --gold:#d9a441;
+    --danger:#b5483a;
+    /* FORGE-style gradients, warmed to SUMMIT */
+    --grad:linear-gradient(135deg,#c8622d,#d9a441);
+    --grad2:linear-gradient(135deg,#7a8b52,#c8622d);
+    --radius:22px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{background:#0a0908;font-family:'Barlow',system-ui,sans-serif;color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .phone{width:390px;height:844px;background:var(--bg);border-radius:48px;border:11px solid #000;box-shadow:0 0 60px rgba(200,98,45,.18),0 40px 90px rgba(0,0,0,.7);position:relative;overflow:hidden;display:flex;flex-direction:column}
+  .phone::before{content:'';position:absolute;top:-100px;left:-60px;width:280px;height:280px;background:radial-gradient(circle,rgba(200,98,45,.32),transparent 70%);filter:blur(45px);z-index:0;pointer-events:none}
+  .phone::after{content:'';position:absolute;bottom:60px;right:-80px;width:300px;height:300px;background:radial-gradient(circle,rgba(122,139,82,.22),transparent 70%);filter:blur(55px);z-index:0;pointer-events:none}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:30px;background:#000;border-radius:0 0 22px 22px;z-index:50}
+  .statusbar{height:48px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 8px;font-size:13px;font-weight:600;flex-shrink:0;position:relative;z-index:2;font-family:'Oswald';letter-spacing:.5px}
+
+  .screen-wrap{flex:1;overflow:hidden;position:relative;z-index:1}
+  .screen{position:absolute;inset:0;overflow-y:auto;display:none;padding:0 18px 100px}
+  .screen.active{display:block}
+  .screen::-webkit-scrollbar{display:none}
+  .topo{position:absolute;inset:0;opacity:.05;pointer-events:none;z-index:0}
+
+  .hd{padding:8px 2px 18px;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1}
+  .hd .hi{font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:2px;font-size:11px;color:var(--muted)}
+  .hd h1{font-family:'Oswald';font-weight:700;font-size:30px;letter-spacing:1px;text-transform:uppercase;line-height:1;margin-top:3px}
+  .streak{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);padding:8px 13px;border-radius:30px;font-family:'Oswald';font-weight:700;font-size:15px}
+  .gearbtn{width:40px;height:40px;border-radius:50%;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .gearbtn svg{width:20px;height:20px;stroke:var(--text);fill:none;stroke-width:1.8}
+
+  .glass{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);backdrop-filter:blur(12px);position:relative;overflow:hidden}
+  .stamp{font-family:'Oswald';text-transform:uppercase;letter-spacing:1.5px}
+
+  /* hero session */
+  .quest{padding:20px;background:var(--grad);border-radius:26px;position:relative;overflow:hidden;margin-bottom:14px;color:#1c1a17}
+  .quest::after{content:'';position:absolute;top:-40px;right:-40px;width:170px;height:170px;background:radial-gradient(circle,rgba(255,255,255,.28),transparent 70%)}
+  .quest .ridge{position:absolute;bottom:0;left:0;right:0;opacity:.18}
+  .quest .tag{font-family:'Barlow Semi Condensed';font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:.8}
+  .quest h2{font-family:'Oswald';font-weight:700;font-size:24px;text-transform:uppercase;letter-spacing:.5px;margin:8px 0 4px;line-height:1.05}
+  .quest .meta{font-size:13px;font-weight:600;opacity:.85;position:relative;z-index:1}
+  .quest .actions{display:flex;gap:10px;margin-top:16px;position:relative;z-index:1}
+  .qbtn{flex:1;border:none;border-radius:14px;padding:13px;font-family:'Oswald';font-weight:600;text-transform:uppercase;letter-spacing:1px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+  .qbtn.watch{background:#1c1a17;color:#ece6da}
+  .qbtn.done{background:rgba(28,26,23,.15);color:#1c1a17;border:1.5px solid rgba(28,26,23,.4)}
+  .qbtn svg{width:16px;height:16px}
+
+  /* rings */
+  .rings{display:flex;gap:12px;margin-bottom:14px}
+  .ringcard{flex:1;padding:14px;text-align:center}
+  .ringcard .rv{font-family:'Oswald';font-weight:700;font-size:18px;margin-top:6px}
+  .ringcard .rl{font-family:'Barlow Semi Condensed';font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+
+  .sec{font-family:'Oswald';font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin:22px 4px 12px;display:flex;justify-content:space-between;align-items:center}
+  .sec a{font-family:'Barlow Semi Condensed';font-size:11px;color:var(--gold);font-weight:600;text-decoration:none;text-transform:uppercase;letter-spacing:1px}
+
+  /* session checklist rows */
+  .blockrow{display:flex;align-items:center;gap:14px;padding:14px;margin-bottom:10px}
+  .bicon{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .bicon svg{width:22px;height:22px;stroke:#1c1a17;fill:none;stroke-width:2}
+  .blockrow .info{flex:1;min-width:0}
+  .blockrow .a{font-family:'Oswald';font-weight:600;text-transform:uppercase;font-size:15px;letter-spacing:.5px}
+  .blockrow .b{font-size:12px;color:var(--muted);margin-top:1px}
+  .check{width:34px;height:34px;border-radius:50%;border:2px solid var(--line-solid);background:var(--bg2);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:.15s}
+  .check.done{background:var(--accent2);border-color:var(--accent2)}
+  .check svg{width:18px;height:18px;stroke:#1c1a17;fill:none;stroke-width:3}
+
+  .btn{width:100%;border:none;border-radius:18px;padding:17px;font-family:'Oswald';font-weight:600;text-transform:uppercase;letter-spacing:1.5px;font-size:15px;cursor:pointer;background:var(--grad);color:#1c1a17;box-shadow:0 8px 24px rgba(200,98,45,.3)}
+  .btn.ghost{background:var(--surface);border:1px solid var(--line);color:var(--text);box-shadow:none}
+
+  /* nav */
+  .nav{position:absolute;bottom:0;left:0;right:0;height:84px;background:rgba(16,16,12,.72);backdrop-filter:blur(24px);border-top:1px solid var(--line);display:flex;align-items:center;z-index:40;padding:0 8px 18px}
+  .nav button{flex:1;background:none;border:none;color:var(--faint);display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:14px;cursor:pointer;font-family:'Barlow Semi Condensed';font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+  .nav button svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.9}
+  .nav button.on{color:var(--accent)}
+  .nav .fab{flex:0 0 auto;width:58px;height:58px;border-radius:50%;background:var(--grad);margin:-20px 6px 0;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(200,98,45,.5);border:none;cursor:pointer}
+  .nav .fab svg{width:26px;height:26px;stroke:#1c1a17;stroke-width:2.6;fill:none}
+
+  /* CREW */
+  .standing{padding:18px;margin-bottom:14px;display:flex;align-items:center;gap:16px}
+  .standing .rank{width:60px;height:60px;border-radius:16px;background:var(--grad);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#1c1a17;flex-shrink:0}
+  .standing .rank .n{font-family:'Oswald';font-weight:700;font-size:24px;line-height:1}
+  .standing .rank .l{font-family:'Barlow Semi Condensed';font-size:8px;text-transform:uppercase;letter-spacing:1px}
+  .standing .info .a{font-family:'Oswald';font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:16px}
+  .standing .info .b{font-size:12px;color:var(--muted);margin-top:2px}
+
+  .lbrow{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .lbrow:last-child{border-bottom:none}
+  .lbrow .pos{font-family:'Oswald';font-weight:700;color:var(--faint);width:18px;text-align:center}
+  .av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Oswald';font-weight:700;font-size:14px;color:#1c1a17;flex-shrink:0}
+  .lbrow .nm{flex:1;font-family:'Oswald';font-weight:500;text-transform:uppercase;letter-spacing:.5px;font-size:14px}
+  .lbrow .ct{font-family:'Oswald';font-weight:700;font-size:15px}
+  .lbrow .ct small{color:var(--muted);font-weight:500;font-size:11px}
+  .lbrow.me{background:rgba(200,98,45,.10)}
+
+  .feed{padding:14px;margin-bottom:10px}
+  .feed .top{display:flex;align-items:center;gap:11px}
+  .feed .who{flex:1}
+  .feed .who .nm{font-family:'Oswald';font-weight:600;text-transform:uppercase;font-size:14px;letter-spacing:.3px}
+  .feed .who .tm{font-size:11px;color:var(--faint)}
+  .feed .body{margin:10px 0 0;font-size:13px;color:var(--text)}
+  .feed .session-pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin-top:8px;font-size:12px}
+  .feed .session-pill b{font-family:'Oswald';text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  .reacts{display:flex;gap:8px;margin-top:12px}
+  .react{background:var(--surface2);border:1px solid var(--line);border-radius:20px;padding:5px 11px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:'Oswald';font-weight:600}
+  .react.on{background:rgba(200,98,45,.18);border-color:var(--accent)}
+  .react .c{color:var(--muted);font-size:12px}
+  .nudge-card{padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;border:1px dashed var(--line-solid)}
+  .nudge-card .info{flex:1}
+  .nudge-card .a{font-family:'Oswald';font-weight:600;text-transform:uppercase;font-size:14px}
+  .nudge-card .b{font-size:12px;color:var(--muted)}
+  .nudge-btn{background:var(--grad2);color:#1c1a17;border:none;border-radius:12px;padding:9px 14px;font-family:'Oswald';font-weight:600;text-transform:uppercase;letter-spacing:1px;font-size:12px;cursor:pointer}
+
+  /* BODY */
+  .fuel{padding:20px;text-align:center;margin-bottom:14px}
+  .macro-row{display:flex;gap:10px;margin-top:6px}
+  .macro{flex:1}
+  .macro .mv{font-family:'Oswald';font-weight:700;font-size:18px}
+  .macro .ml{font-family:'Barlow Semi Condensed';font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+  .macro .mb{height:5px;border-radius:3px;background:var(--line-solid);margin-top:7px;overflow:hidden}
+  .macro .mb>i{display:block;height:100%;border-radius:3px}
+  .log{display:flex;align-items:center;gap:13px;padding:14px;margin-bottom:10px}
+  .log .ic{width:42px;height:42px;border-radius:13px;background:var(--surface2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+  .log .ic svg{width:20px;height:20px;stroke:var(--accent);fill:none;stroke-width:1.9}
+  .log .info{flex:1}.log .a{font-family:'Oswald';font-weight:600;text-transform:uppercase;font-size:13px;letter-spacing:.5px}.log .b{font-size:12px;color:var(--muted)}
+  .log .v{font-family:'Oswald';font-weight:700;font-size:16px}
+
+  /* PROGRESS */
+  .lvl{padding:20px;margin-bottom:14px;text-align:center}
+  .lvl .badge{width:80px;height:80px;border-radius:50%;background:var(--grad);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-family:'Oswald';font-weight:700;font-size:30px;color:#1c1a17;box-shadow:0 0 30px rgba(200,98,45,.4)}
+  .pbar{height:10px;background:rgba(0,0,0,.3);border-radius:6px;overflow:hidden}
+  .pbar>i{display:block;height:100%;background:var(--grad);border-radius:6px}
+  .bars{display:flex;align-items:flex-end;gap:8px;height:120px;padding:16px 16px 28px;position:relative}
+  .bars .b{flex:1;border-radius:6px 6px 0 0;position:relative;background:var(--grad);min-height:10px}
+  .bars .b span{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-family:'Barlow Semi Condensed';font-size:9px;color:var(--faint);text-transform:uppercase}
+  .badges{display:flex;gap:12px;overflow-x:auto;padding:4px 0}
+  .badges::-webkit-scrollbar{display:none}
+  .bdg{flex:0 0 auto;width:84px;text-align:center}
+  .bdg .circ{width:66px;height:66px;border-radius:50%;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:28px}
+  .bdg .nm{font-family:'Barlow Semi Condensed';font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .bdg.locked .circ{background:var(--surface2);border:1px dashed var(--line-solid);filter:grayscale(1);opacity:.4}
+
+  /* APPEARANCE */
+  .opt{padding:16px;margin-bottom:12px}
+  .opt .l{font-family:'Oswald';font-weight:600;text-transform:uppercase;letter-spacing:1px;font-size:15px}
+  .opt .d{font-size:12px;color:var(--muted);margin:3px 0 12px;line-height:1.4}
+  .grads{display:flex;gap:12px}
+  .gr{flex:1;height:54px;border-radius:14px;cursor:pointer;border:2px solid transparent;position:relative}
+  .gr.sel{border-color:#fff}.gr.sel::after{content:'✓';position:absolute;top:6px;right:8px;font-weight:800;color:#1c1a17}
+  .seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px}
+  .seg button{flex:1;background:none;border:none;color:var(--muted);padding:10px;font-family:'Oswald';font-weight:600;text-transform:uppercase;letter-spacing:1px;font-size:12px;border-radius:10px;cursor:pointer}
+  .seg button.on{background:var(--grad);color:#1c1a17}
+  .toggle{display:flex;justify-content:space-between;align-items:center;padding:16px}
+  .toggle .l{font-family:'Oswald';font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:15px}.toggle .d{font-size:12px;color:var(--muted);margin-top:2px}
+  .swt{width:48px;height:28px;border-radius:15px;background:var(--line-solid);position:relative;cursor:pointer;flex-shrink:0;transition:.2s}
+  .swt.on{background:var(--accent2)}
+  .swt i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--text);transition:.2s}
+  .swt.on i{left:23px}
+  .wchip{display:flex;align-items:center;gap:12px;padding:15px 16px;margin-bottom:10px}
+  .wchip .grip{color:var(--faint)}.wchip span.t{flex:1;font-family:'Oswald';text-transform:uppercase;font-size:14px;letter-spacing:.5px}
+
+  .opt-note{font-size:11px;color:var(--faint);font-style:italic;margin:0 4px 14px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="notch"></div>
+  <div class="statusbar"><span>6:14</span><span>BASECAMP</span><span>▲ 64%</span></div>
+
+  <div class="screen-wrap">
+    <svg class="topo" viewBox="0 0 390 844" preserveAspectRatio="none"><g fill="none" stroke="#c8622d" stroke-width="1">
+      <path d="M-20 140 Q120 60 260 140 T560 140"/><path d="M-20 180 Q120 110 260 180 T560 180"/>
+      <path d="M-20 460 Q140 400 280 470 T580 460"/><path d="M-20 500 Q140 450 280 510 T580 500"/>
+      <path d="M-20 720 Q120 660 260 730 T560 720"/></g></svg>
+
+    <!-- TODAY -->
+    <section class="screen active" id="s-today">
+      <div class="hd"><div><div class="hi">Phase 2 · Week 3 · Day 4</div><h1>Today</h1></div>
+        <div style="display:flex;gap:10px;align-items:center"><div class="streak">🔥 14</div><div class="gearbtn" onclick="go('look')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></div></div>
+      </div>
+
+      <div class="quest">
+        <svg class="ridge" viewBox="0 0 390 100" preserveAspectRatio="none"><polygon points="0,100 0,60 80,30 150,55 230,20 320,50 390,30 390,100" fill="#1c1a17"/></svg>
+        <div class="tag">Today's Session · MTNTOUGH</div>
+        <h2>Lower Body + Ruck</h2>
+        <div class="meta">Backcountry Athlete · ~58 min · 3 blocks</div>
+        <div class="actions">
+          <button class="qbtn watch" onclick="alert('Opens the session on mtntough.com')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Watch on MTNTOUGH</button>
+          <button class="qbtn done" onclick="go('session')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg> Check In</button>
+        </div>
+      </div>
+
+      <div class="rings">
+        <div class="glass ringcard">
+          <svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="6"/><circle cx="28" cy="28" r="22" fill="none" stroke="#c8622d" stroke-width="6" stroke-linecap="round" stroke-dasharray="138" stroke-dashoffset="46" transform="rotate(-90 28 28)"/></svg>
+          <div class="rv">0/1</div><div class="rl">Session</div>
+        </div>
+        <div class="glass ringcard">
+          <svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="6"/><circle cx="28" cy="28" r="22" fill="none" stroke="#7a8b52" stroke-width="6" stroke-linecap="round" stroke-dasharray="138" stroke-dashoffset="21" transform="rotate(-90 28 28)"/></svg>
+          <div class="rv">79%</div><div class="rl">Fuel</div>
+        </div>
+        <div class="glass ringcard">
+          <svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="6"/><circle cx="28" cy="28" r="22" fill="none" stroke="#d9a441" stroke-width="6" stroke-linecap="round" stroke-dasharray="138" stroke-dashoffset="100" transform="rotate(-90 28 28)"/></svg>
+          <div class="rv">28%</div><div class="rl">Water</div>
+        </div>
+      </div>
+
+      <div class="sec">Crew · Today <a href="#" onclick="go('crew');return false">Open Crew →</a></div>
+      <div class="glass" style="padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:10px">
+        <div style="display:flex">
+          <div class="av" style="background:#7a8b52;margin-right:-10px;border:2px solid var(--bg)">JK</div>
+          <div class="av" style="background:#c8622d;margin-right:-10px;border:2px solid var(--bg)">SM</div>
+          <div class="av" style="background:#d9a441;border:2px solid var(--bg)">MR</div>
+        </div>
+        <div style="flex:1;font-size:13px;color:var(--muted)"><b style="color:var(--text);font-family:'Oswald'">3 of 5</b> crew trained today</div>
+        <span style="font-family:'Oswald';color:var(--gold)">›</span>
+      </div>
+
+      <button class="btn" onclick="go('session')">▶ Start Today's Session</button>
+    </section>
+
+    <!-- SESSION (completion-first) -->
+    <section class="screen" id="s-session">
+      <div class="hd"><div><div class="hi">MTNTOUGH · Backcountry</div><h1>Check In</h1></div><div class="streak">~58 min</div></div>
+
+      <div class="glass" style="padding:16px;margin-bottom:14px">
+        <div style="font-family:'Oswald';font-weight:700;font-size:20px;text-transform:uppercase;letter-spacing:.5px">Lower Body + Ruck</div>
+        <div style="font-size:13px;color:var(--muted);margin:4px 0 14px">Follow along on the MTNTOUGH video, then tick off each block as you finish.</div>
+        <button class="btn" style="background:var(--surface2);color:var(--text);box-shadow:none" onclick="alert('Opens mtntough.com session in browser')"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px;margin-right:6px"><path d="M8 5v14l11-7z"/></svg> Watch on MTNTOUGH ↗</button>
+      </div>
+
+      <div class="sec">Session Blocks <a href="#">Auto-check all</a></div>
+      <div class="glass blockrow"><div class="bicon" style="background:var(--grad2)"><svg viewBox="0 0 24 24"><path d="M12 3v9l5 3"/><circle cx="12" cy="12" r="9"/></svg></div><div class="info"><div class="a">Warm-up</div><div class="b">8 min · dynamic prep</div></div><div class="check done" onclick="toggleCheck(this)"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div></div>
+      <div class="glass blockrow"><div class="bicon" style="background:var(--grad)"><svg viewBox="0 0 24 24"><path d="M6 12h12M4 9v6M20 9v6M8 6v12M16 6v12"/></svg></div><div class="info"><div class="a">Strength — Back Squat</div><div class="b">5×5 · <span style="color:var(--gold);cursor:pointer">+ log weight (optional)</span></div></div><div class="check done" onclick="toggleCheck(this)"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div></div>
+      <div class="glass blockrow"><div class="bicon" style="background:var(--grad)"><svg viewBox="0 0 24 24"><path d="M4 20l5-9 4 5 7-11"/></svg></div><div class="info"><div class="a">Conditioning — Ruck</div><div class="b">3 mi · 35 lb · <span style="color:var(--gold);cursor:pointer">+ log time</span></div></div><div class="check" onclick="toggleCheck(this)"></div></div>
+      <div class="glass blockrow"><div class="bicon" style="background:linear-gradient(135deg,#d9a441,#c8622d)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg></div><div class="info"><div class="a">Mobility Flush</div><div class="b">8 min · hips & t-spine</div></div><div class="check" onclick="toggleCheck(this)"></div></div>
+
+      <div class="glass" style="padding:14px;margin:16px 0 0;display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-family:'Oswald';text-transform:uppercase;font-size:14px;letter-spacing:.5px">Share to crew</div><div style="font-size:11px;color:var(--muted)">Post completion to your feed</div></div>
+        <div class="swt on" onclick="this.classList.toggle('on')"><i></i></div>
+      </div>
+
+      <button class="btn" style="margin-top:14px" onclick="alert('Session marked complete! Streak → 15, posted to crew.');go('today')">✓ Mark Session Complete</button>
+    </section>
+
+    <!-- CREW -->
+    <section class="screen" id="s-crew">
+      <div class="hd"><div><div class="hi">5 athletes · this week</div><h1>Crew</h1></div><div class="gearbtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+
+      <div class="glass standing">
+        <div class="rank"><div class="n">#2</div><div class="l">This Wk</div></div>
+        <div class="info"><div class="a">You · Tim H</div><div class="b">4 sessions this week · 🔥 14-day streak</div></div>
+      </div>
+
+      <div class="sec">Weekly Leaderboard <a href="#">Sessions ▾</a></div>
+      <div class="glass" style="margin-bottom:4px">
+        <div class="lbrow"><span class="pos">1</span><div class="av" style="background:#7a8b52">JK</div><span class="nm">Jake K</span><span class="ct">5<small> sess</small></span></div>
+        <div class="lbrow me"><span class="pos">2</span><div class="av" style="background:var(--grad);background:#c8622d">TH</div><span class="nm">You</span><span class="ct">4<small> sess</small></span></div>
+        <div class="lbrow"><span class="pos">3</span><div class="av" style="background:#d9a441">SM</div><span class="nm">Sarah M</span><span class="ct">4<small> sess</small></span></div>
+        <div class="lbrow"><span class="pos">4</span><div class="av" style="background:#5a7d8c">DL</div><span class="nm">Dustin L</span><span class="ct">3<small> sess</small></span></div>
+        <div class="lbrow"><span class="pos">5</span><div class="av" style="background:#b5483a">MR</div><span class="nm">Marcus R</span><span class="ct">1<small> sess</small></span></div>
+      </div>
+
+      <div class="sec">Activity</div>
+      <div class="glass nudge-card"><div class="av" style="background:#b5483a">MR</div><div class="info"><div class="a">Marcus hasn't trained today</div><div class="b">Last session: 3 days ago</div></div><button class="nudge-btn">👊 Nudge</button></div>
+
+      <div class="glass feed">
+        <div class="top"><div class="av" style="background:#7a8b52">JK</div><div class="who"><div class="nm">Jake K</div><div class="tm">2 hours ago</div></div><span>🔥</span></div>
+        <div class="body">Crushed it before work.</div>
+        <span class="session-pill">✓ <b>Lower Body + Ruck</b> · 61 min</span>
+        <div class="reacts"><div class="react on" onclick="this.classList.toggle('on')">👊 <span class="c">4</span></div><div class="react" onclick="this.classList.toggle('on')">🔥 <span class="c">2</span></div><div class="react" onclick="this.classList.toggle('on')">💬 <span class="c">1</span></div></div>
+      </div>
+
+      <div class="glass feed">
+        <div class="top"><div class="av" style="background:#d9a441">SM</div><div class="who"><div class="nm">Sarah M</div><div class="tm">5 hours ago · hit a PR 🏔️</div></div></div>
+        <div class="body">315 back squat finally!! That program is working.</div>
+        <span class="session-pill">🏆 <b>Back Squat PR</b> · 315 lb</span>
+        <div class="reacts"><div class="react" onclick="this.classList.toggle('on')">👊 <span class="c">6</span></div><div class="react on" onclick="this.classList.toggle('on')">🔥 <span class="c">9</span></div></div>
+      </div>
+    </section>
+
+    <!-- BODY -->
+    <section class="screen" id="s-body">
+      <div class="hd"><div><div class="hi">Tuesday, June 3</div><h1>Body & Fuel</h1></div><div class="streak">＋ Log</div></div>
+      <div class="glass fuel">
+        <svg width="130" height="130" viewBox="0 0 130 130" style="display:block;margin:0 auto">
+          <circle cx="65" cy="65" r="54" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="12"/>
+          <circle cx="65" cy="65" r="54" fill="none" stroke="url(#fg)" stroke-width="12" stroke-linecap="round" stroke-dasharray="339" stroke-dashoffset="71" transform="rotate(-90 65 65)"/>
+          <defs><linearGradient id="fg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c8622d"/><stop offset="1" stop-color="#d9a441"/></linearGradient></defs>
+          <text x="65" y="60" text-anchor="middle" font-family="Oswald" font-weight="700" font-size="30" fill="#ece6da">2140</text>
+          <text x="65" y="80" text-anchor="middle" font-family="Barlow Semi Condensed" font-size="11" letter-spacing="1" fill="#9b9082">/ 2700 KCAL</text>
+        </svg>
+        <div class="macro-row">
+          <div class="macro"><div class="mv">168g</div><div class="ml">Protein</div><div class="mb"><i style="width:82%;background:#c8622d"></i></div></div>
+          <div class="macro"><div class="mv">196g</div><div class="ml">Carbs</div><div class="mb"><i style="width:60%;background:#d9a441"></i></div></div>
+          <div class="macro"><div class="mv">62g</div><div class="ml">Fat</div><div class="mb"><i style="width:70%;background:#7a8b52"></i></div></div>
+        </div>
+      </div>
+      <div class="sec">Body Metrics <a href="#">History</a></div>
+      <div class="glass log"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h18"/><circle cx="12" cy="12" r="9"/></svg></div><div class="info"><div class="a">Bodyweight</div><div class="b">▼ 1.2 lb this week</div></div><div class="v">182.0</div></div>
+      <div class="glass log"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/></svg></div><div class="info"><div class="a">Waist</div><div class="b">2 days ago</div></div><div class="v">33.5"</div></div>
+      <div class="glass log"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></div><div class="info"><div class="a">Body Fat</div><div class="b">Calipers · est.</div></div><div class="v">14.8%</div></div>
+      <div class="sec">Today's Fuel <a href="#">+ Add</a></div>
+      <div class="glass log"><div class="ic"><svg viewBox="0 0 24 24"><path d="M5 3v18M5 8h6M19 3c-2 4-2 7 0 10v8"/></svg></div><div class="info"><div class="a">Breakfast</div><div class="b">Eggs, oats, berries</div></div><div class="v">620</div></div>
+      <div class="glass log"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg></div><div class="info"><div class="a">Lunch</div><div class="b">Elk, rice, greens</div></div><div class="v">810</div></div>
+    </section>
+
+    <!-- PROGRESS -->
+    <section class="screen" id="s-progress">
+      <div class="hd"><div><div class="hi">Your journey</div><h1>Progress</h1></div></div>
+      <div class="glass lvl">
+        <div class="badge">12</div>
+        <div style="font-family:'Oswald';font-weight:600;text-transform:uppercase;font-size:18px;letter-spacing:.5px">Backcountry Athlete</div>
+        <div style="font-size:12px;color:var(--muted);margin:4px 0 14px">2,340 / 3,000 XP to Level 13</div>
+        <div class="pbar"><i style="width:78%"></i></div>
+      </div>
+      <div class="sec">Sessions Completed <a href="#" style="color:var(--accent2)">▲ this phase</a></div>
+      <div class="glass"><div class="bars">
+        <div class="b" style="height:60%"><span>W1</span></div><div class="b" style="height:80%"><span>W2</span></div>
+        <div class="b" style="height:80%"><span>W3</span></div><div class="b" style="height:100%"><span>W4</span></div>
+        <div class="b" style="height:80%"><span>W5</span></div><div class="b" style="height:100%"><span>W6</span></div>
+        <div class="b" style="height:60%"><span>W7</span></div>
+      </div></div>
+      <div class="sec">Badges <a href="#">12 / 40</a></div>
+      <div class="badges">
+        <div class="bdg"><div class="circ" style="background:linear-gradient(135deg,#d9a441,#c8622d)">🏔️</div><div class="nm">Summit</div></div>
+        <div class="bdg"><div class="circ" style="background:var(--grad)">🔥</div><div class="nm">14-Day</div></div>
+        <div class="bdg"><div class="circ" style="background:var(--grad2)">🎒</div><div class="nm">Rucker</div></div>
+        <div class="bdg"><div class="circ" style="background:linear-gradient(135deg,#7a8b52,#d9a441)">👊</div><div class="nm">Crew MVP</div></div>
+        <div class="bdg locked"><div class="circ">🔒</div><div class="nm">Iron Lung</div></div>
+      </div>
+    </section>
+
+    <!-- APPEARANCE -->
+    <section class="screen" id="s-look">
+      <div class="hd"><div><div class="hi">Make it yours</div><h1>Appearance</h1></div></div>
+      <div class="glass opt"><div class="l">Accent Gradient</div><div class="d">Powers your session card, rings & buttons.</div>
+        <div class="grads">
+          <div class="gr sel" style="background:linear-gradient(135deg,#c8622d,#d9a441)"></div>
+          <div class="gr" style="background:linear-gradient(135deg,#7a8b52,#c8622d)"></div>
+          <div class="gr" style="background:linear-gradient(135deg,#d9a441,#b5483a)"></div>
+          <div class="gr" style="background:linear-gradient(135deg,#5a7d8c,#7a8b52)"></div>
+        </div>
+      </div>
+      <div class="glass opt"><div class="l">Theme</div><div class="d">Dark-first for low-light field use.</div>
+        <div class="seg"><button class="on">Trailhead Dark</button><button>Alpine Light</button><button>Auto</button></div>
+      </div>
+      <div class="glass opt"><div class="l">Energy</div><div class="d">Animation, glow & celebration level.</div>
+        <div class="seg"><button>Calm</button><button class="on">Standard</button><button>Hyped</button></div>
+      </div>
+      <div class="glass">
+        <div class="toggle"><div><div class="l">Crew & Social</div><div class="d">Leaderboard, feed, nudges, reactions</div></div><div class="swt on" onclick="this.classList.toggle('on')"><i></i></div></div>
+        <div class="toggle" style="border-top:1px solid var(--line)"><div><div class="l">Gamification</div><div class="d">XP, levels, streaks & badges</div></div><div class="swt on" onclick="this.classList.toggle('on')"><i></i></div></div>
+        <div class="toggle" style="border-top:1px solid var(--line)"><div><div class="l">Topographic texture</div><div class="d">Contour lines behind screens</div></div><div class="swt on" onclick="this.classList.toggle('on')"><i></i></div></div>
+        <div class="toggle" style="border-top:1px solid var(--line)"><div><div class="l">Haptics</div><div class="d">Buzz on check-ins & reactions</div></div><div class="swt on" onclick="this.classList.toggle('on')"><i></i></div></div>
+      </div>
+      <div class="sec">Home Cards <a href="#">Reset</a></div>
+      <div class="opt-note">Drag to reorder what shows on Today.</div>
+      <div class="glass wchip"><span class="grip">⠿</span><span class="t">Today's Session</span><div class="swt on"><i></i></div></div>
+      <div class="glass wchip"><span class="grip">⠿</span><span class="t">Activity Rings</span><div class="swt on"><i></i></div></div>
+      <div class="glass wchip"><span class="grip">⠿</span><span class="t">Crew Today</span><div class="swt on"><i></i></div></div>
+      <div class="glass wchip"><span class="grip">⠿</span><span class="t">Units</span><div class="swt on"><i></i></div></div>
+    </section>
+
+  </div>
+
+  <nav class="nav">
+    <button class="on" data-s="today" onclick="go('today')"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>Today</button>
+    <button data-s="crew" onclick="go('crew')"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20v-1a5 5 0 015-5h2a5 5 0 015 5v1M15 14h1a4 4 0 014 4v2"/></svg>Crew</button>
+    <button class="fab" onclick="go('session')"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></button>
+    <button data-s="body" onclick="go('body')"><svg viewBox="0 0 24 24"><path d="M3 12c4 0 4-6 9-6s5 6 9 6-4 6-9 6-5-6-9-6z"/></svg>Body</button>
+    <button data-s="progress" onclick="go('progress')"><svg viewBox="0 0 24 24"><path d="M4 14l5-5 4 4 7-8"/></svg>Progress</button>
+  </nav>
+</div>
+<script>
+  function go(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('s-'+id).classList.add('active');
+    document.querySelectorAll('.nav button[data-s]').forEach(b=>b.classList.toggle('on',b.dataset.s===id));
+    document.querySelector('.screen.active').scrollTop=0;
+  }
+  function toggleCheck(c){c.classList.toggle('done');c.innerHTML=c.classList.contains('done')?'<svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>':''}
+  document.querySelectorAll('.grads').forEach(g=>g.querySelectorAll('.gr').forEach(s=>s.addEventListener('click',()=>{g.querySelectorAll('.gr').forEach(x=>x.classList.remove('sel'));s.classList.add('sel')})));
+  document.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{g.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on')})));
+</script>
+</body>
+</html>

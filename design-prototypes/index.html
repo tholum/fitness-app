@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fitness App — Look & Feel Variants</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:#0c0e13;color:#e8eaf0;padding:40px 24px 80px}
+  header{max-width:1200px;margin:0 auto 36px;text-align:center}
+  header h1{font-size:34px;font-weight:800;letter-spacing:-1px}
+  header p{color:#9098a8;margin-top:8px;font-size:15px;max-width:640px;margin-left:auto;margin-right:auto;line-height:1.5}
+  .controls{display:flex;gap:10px;justify-content:center;margin:24px 0 8px;flex-wrap:wrap}
+  .controls button{background:#1a1d26;border:1px solid #2a2e3a;color:#cfd4e0;padding:10px 18px;border-radius:10px;font-weight:600;cursor:pointer;font-family:inherit;font-size:13px}
+  .controls button:hover{border-color:#4a5263}
+  .featured{max-width:880px;margin:0 auto 16px;background:#15130f;border:1px solid #c8622d;border-radius:22px;padding:24px;display:flex;gap:28px;align-items:flex-start}
+  @media(max-width:760px){.featured{flex-direction:column;align-items:center;text-align:center}}
+  .featured .meta{flex:1}
+  .featured .lead{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#d9a441}
+  .featured h2{font-size:26px;font-weight:800;color:#e7a86a;margin:6px 0}
+  .featured p{color:#b9b0a2;font-size:14px;line-height:1.55;margin-bottom:12px}
+  .featured ul{list-style:none;font-size:13px;color:#cfc7b8;line-height:1.9}
+  .featured li::before{content:'▸ ';color:#c8622d}
+  .featured .fcontrols{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .featured .fcontrols button{background:#241c14;border:1px solid #4a3a28;color:#e7d8c4;padding:8px 14px;border-radius:9px;font-weight:600;cursor:pointer;font-family:inherit;font-size:12px}
+  .featured .fframe{width:300px;flex-shrink:0;display:flex;justify-content:center;overflow:hidden;border-radius:16px;border:1px solid #3a2e20}
+  .featured iframe{width:430px;height:880px;border:none;transform:scale(.70);transform-origin:top center;margin-bottom:-265px}
+  .divider{max-width:1200px;margin:34px auto 18px;display:flex;align-items:center;gap:16px;color:#6b7280;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:#20242f}
+  .grid{max-width:1320px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  @media(max-width:1100px){.grid{grid-template-columns:1fr;max-width:440px}}
+  .col{background:#11141b;border:1px solid #20242f;border-radius:20px;padding:20px;display:flex;flex-direction:column;align-items:center}
+  .col h2{font-size:20px;font-weight:800;letter-spacing:.5px}
+  .col .tagline{color:#8b93a5;font-size:13px;margin:4px 0 4px;text-align:center;min-height:34px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+  .chip{font-size:11px;font-weight:600;padding:4px 9px;border-radius:20px}
+  .frame{width:100%;border-radius:18px;overflow:hidden;border:1px solid #20242f;background:#000}
+  iframe{width:430px;height:920px;border:none;transform:scale(.86);transform-origin:top center;margin-bottom:-130px;display:block}
+  .colwrap{width:370px;overflow:hidden;display:flex;justify-content:center}
+  .open{margin-top:6px;font-size:13px;font-weight:600;text-decoration:none;color:#7b8194;border:1px solid #2a2e3a;padding:8px 16px;border-radius:10px}
+  .open:hover{color:#fff;border-color:#4a5263}
+  .legend{max-width:1200px;margin:30px auto 0;text-align:center;color:#6b7280;font-size:13px;line-height:1.6}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+</style>
+</head>
+<body>
+<header>
+  <h1>Fitness App — Three Looks & Feels</h1>
+  <p>Same app, same MTNTOUGH program + body/nutrition data — three wildly different design philosophies. Tap through each phone (Today · Train · Body · Progress · Look) to feel the difference. The <strong>Look</strong> tab in each shows how that variant's appearance gets configured.</p>
+  <div class="controls">
+    <button onclick="nav('today')">▸ All to Today</button>
+    <button onclick="nav('train')">▸ All to Train</button>
+    <button onclick="nav('body')">▸ All to Body</button>
+    <button onclick="nav('progress')">▸ All to Progress</button>
+    <button onclick="nav('look')">▸ All to Look (config)</button>
+  </div>
+</header>
+
+<div class="featured">
+  <div class="meta">
+    <div class="lead">★ Your direction · SUMMIT colors × FORGE layout</div>
+    <h2>04 · BASECAMP</h2>
+    <p>The merge you asked for: SUMMIT's earthy blaze/moss palette and rugged type on FORGE's gamified, card-driven layout — rebuilt around <strong>completion-first tracking</strong> (follow the MTNTOUGH video, then check it off) and a <strong>Crew</strong> tab for accountability.</p>
+    <ul>
+      <li><strong>Today</strong> → "Watch on MTNTOUGH" + "Check In", plus crew-today strip</li>
+      <li><strong>Check In</strong> → tick off session blocks, optional weight/time logging, share to crew</li>
+      <li><strong>Crew</strong> → weekly leaderboard, activity feed, reactions & nudges</li>
+      <li><strong>Body · Progress · Look</strong> → fuel rings, streaks, badges, config</li>
+    </ul>
+    <div class="fcontrols">
+      <button onclick="navOne('f4','today')">Today</button>
+      <button onclick="navOne('f4','session')">Check In</button>
+      <button onclick="navOne('f4','crew')">Crew</button>
+      <button onclick="navOne('f4','progress')">Progress</button>
+      <button onclick="navOne('f4','look')">Look</button>
+      <a class="open" href="variant-4-basecamp/index.html" target="_blank" style="margin-top:0">Open fullscreen ↗</a>
+    </div>
+  </div>
+  <div class="fframe"><iframe id="f4" src="variant-4-basecamp/index.html"></iframe></div>
+</div>
+
+<div class="divider">The three originals (for reference)</div>
+
+<div class="grid">
+  <div class="col">
+    <h2 style="color:#c8622d">01 · SUMMIT</h2>
+    <div class="tagline">Rugged backcountry. Topographic, earthy, gritty — a tool for the field.</div>
+    <div class="chips">
+      <span class="chip" style="background:#2a1f17;color:#c8622d">Dark-first</span>
+      <span class="chip" style="background:#23271c;color:#9aae6b">Condensed type</span>
+      <span class="chip" style="background:#2a2017;color:#d9a441">Utilitarian</span>
+    </div>
+    <div class="colwrap"><iframe id="f1" src="variant-1-summit/index.html"></iframe></div>
+    <a class="open" href="variant-1-summit/index.html" target="_blank">Open fullscreen ↗</a>
+  </div>
+
+  <div class="col">
+    <h2 style="color:#1463ff">02 · PULSE</h2>
+    <div class="tagline">Clinical minimalist. Light, airy, data-first — quantified-self precision.</div>
+    <div class="chips">
+      <span class="chip" style="background:#0f1830;color:#5b9dff">Light-first</span>
+      <span class="chip" style="background:#10231c;color:#3fd29e">Monospace data</span>
+      <span class="chip" style="background:#1a1d26;color:#aab0ba">Calm</span>
+    </div>
+    <div class="colwrap"><iframe id="f2" src="variant-2-pulse/index.html"></iframe></div>
+    <a class="open" href="variant-2-pulse/index.html" target="_blank">Open fullscreen ↗</a>
+  </div>
+
+  <div class="col">
+    <h2 style="color:#ff2e88">03 · FORGE</h2>
+    <div class="tagline">Bold gamified. Neon gradients, XP, streaks & badges — high-energy arcade.</div>
+    <div class="chips">
+      <span class="chip" style="background:#2a0f1d;color:#ff5ca0">OLED dark</span>
+      <span class="chip" style="background:#1a1530;color:#9d84ff">Gradients</span>
+      <span class="chip" style="background:#102622;color:#16e0c8">Gamified</span>
+    </div>
+    <div class="colwrap"><iframe id="f3" src="variant-3-forge/index.html"></iframe></div>
+    <a class="open" href="variant-3-forge/index.html" target="_blank">Open fullscreen ↗</a>
+  </div>
+</div>
+
+<div class="legend">
+  <span class="dot" style="background:#c8622d"></span>SUMMIT &nbsp;&nbsp;
+  <span class="dot" style="background:#1463ff"></span>PULSE &nbsp;&nbsp;
+  <span class="dot" style="background:#ff2e88"></span>FORGE<br/>
+  Full design tokens, configuration options, and architecture notes are in <strong>DESIGN-SYSTEM.md</strong>.
+</div>
+
+<script>
+  function nav(screen){
+    ['f1','f2','f3','f4'].forEach(id=>{
+      try{ document.getElementById(id).contentWindow.go(screen); }catch(e){}
+    });
+  }
+  function navOne(id,screen){
+    try{ document.getElementById(id).contentWindow.go(screen); }catch(e){}
+  }
+</script>
+</body>
+</html>

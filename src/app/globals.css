@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ════════════════════════════════════════════════════════════════════
+   THEME-TOKEN ENGINE
+   Every color/shape/gradient is a CSS variable. The default is BASECAMP
+   (SUMMIT palette × FORGE layout). Switching [data-theme] or overriding
+   --accent etc. (from a user's saved appearance) re-skins everything.
+   ════════════════════════════════════════════════════════════════════ */
+
+:root,
+[data-theme="dark"] {
+  --bg: #1c1a17;
+  --bg2: #10100c;
+  --surface: rgba(255, 255, 255, 0.045);
+  --surface-solid: #2f2b26;
+  --surface2: #3a352e;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-solid: #4a443b;
+  --text: #ece6da;
+  --muted: #9b9082;
+  --faint: #6e655a;
+
+  --accent: #c8622d;   /* blaze */
+  --accent2: #7a8b52;  /* moss */
+  --gold: #d9a441;
+  --danger: #b5483a;
+
+  --grad: linear-gradient(135deg, #c8622d, #d9a441);
+  --grad2: linear-gradient(135deg, #7a8b52, #c8622d);
+
+  --radius: 22px;
+  --font-display: "Oswald";
+  --font-body: "Barlow";
+  --font-cond: "Barlow Semi Condensed";
+
+  color-scheme: dark;
+}
+
+/* Alpine Light variant */
+[data-theme="light"] {
+  --bg: #f3efe7;
+  --bg2: #e7e0d3;
+  --surface: rgba(28, 26, 23, 0.04);
+  --surface-solid: #ffffff;
+  --surface2: #efe9dd;
+  --line: rgba(28, 26, 23, 0.12);
+  --line-solid: #d8cfbe;
+  --text: #211d18;
+  --muted: #6b6457;
+  --faint: #9b9182;
+  color-scheme: light;
+}
+
+/* User accent overrides (set via data-accent or inline --accent) */
+[data-accent="moss"]  { --accent: #7a8b52; --grad: linear-gradient(135deg,#7a8b52,#c8622d); }
+[data-accent="rust"]  { --accent: #b5483a; --grad: linear-gradient(135deg,#d9a441,#b5483a); }
+[data-accent="slate"] { --accent: #5a7d8c; --grad: linear-gradient(135deg,#5a7d8c,#7a8b52); }
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* hide scrollbars in the app shell */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

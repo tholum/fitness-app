@@ -1,0 +1,372 @@
+import { type ReactNode } from "react";
+import Link from "next/link";
+
+import { Card, Ring, SectionHeader, StatPill } from "@/components/ui";
+import {
+  getProfile,
+  getTodaySession,
+  getCrewToday,
+  getBodyToday,
+  getActiveEnrollment,
+  resolveTodayDay,
+  getNudges,
+  getUnseenNudgeCount,
+} from "@/lib/queries";
+import { NudgeInbox } from "../checkin/_components";
+
+/* ════════════════════════════════════════════════════════════════════
+   TODAY
+   Ported from design-prototypes/variant-4-basecamp (#s-today). Server
+   component: reads the profile, the user's ACTIVE ENROLLMENT and the day
+   it currently points at (resolveTodayDay → hero eyebrow / meta / video),
+   the crew's "trained today" roll-up, and any incoming nudges. Every
+   branch renders a graceful empty state so a fresh, unenrolled account
+   still looks intentional, and the empty-state CTAs route to /programs so
+   the user can pick or build a plan.
+   ════════════════════════════════════════════════════════════════════ */
+
+export const dynamic = "force-dynamic";
+
+/* ── Local helper: deterministic avatar color from the prototype palette ── */
+const AVATAR_COLORS = [
+  "#7a8b52", // moss
+  "#c8622d", // blaze
+  "#d9a441", // gold
+  "#5a7d8c", // slate
+  "#b5483a", // rust
+] as const;
+
+function avatarColor(seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "AB";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+// Daily ring targets. The schema has no per-user goals yet, so the Fuel and
+// Water rings track sensible athletic defaults; they fill in as the Body
+// screen logs land for today.
+const FUEL_GOAL_KCAL = 2700;
+const WATER_GOAL_ML = 3000;
+
+function pct(value: number): string {
+  return `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%`;
+}
+
+export default async function TodayPage() {
+  const profile = await getProfile();
+
+  // Resolve everything in parallel. resolveTodayDay walks the active
+  // enrollment's current_day_id; getActiveEnrollment gives us the program
+  // name/source for the hero eyebrow even before any session is started.
+  const [session, crew, body, enrollment, today, nudges, unseenNudges] =
+    await Promise.all([
+      getTodaySession(profile?.id),
+      getCrewToday(profile?.id),
+      getBodyToday(profile?.id),
+      getActiveEnrollment(profile?.id),
+      resolveTodayDay(profile?.id),
+      getNudges(profile?.id),
+      getUnseenNudgeCount(profile?.id),
+    ]);
+
+  // The enrollment supplies the program (name/source for the eyebrow);
+  // resolveTodayDay supplies the scheduled day + its ordered blocks.
+  const program = enrollment?.program ?? null;
+  const day = today?.day ?? null;
+  const hasEnrollment = Boolean(enrollment);
+
+  // ── Hero copy ─────────────────────────────────────────────────────────
+  // A scheduled day comes from the active enrollment; a started/completed
+  // session may exist for today too. Show the hero whenever either exists.
+  const hasSession = Boolean(session || day);
+  const sessionTitle =
+    session?.log.title ?? day?.title ?? "No active program";
+  const estMinutes = day?.est_minutes ?? session?.log.duration_min ?? null;
+  const blockCount = today?.blocks.length ?? session?.blocks.length ?? 0;
+  const videoUrl = day?.video_url ?? null;
+
+  const eyebrowSource =
+    program?.source === "MTNTOUGH" ? "MTNTOUGH" : program?.name ?? null;
+  const phaseLine = day
+    ? `Phase ${day.phase} · Week ${day.week} · Day ${day.day}`
+    : hasEnrollment
+      ? program?.name ?? "Active program"
+      : "No active program";
+
+  const metaParts: string[] = [];
+  if (program?.name) metaParts.push(program.name);
+  if (estMinutes) metaParts.push(`~${estMinutes} min`);
+  if (blockCount) metaParts.push(`${blockCount} ${blockCount === 1 ? "block" : "blocks"}`);
+  const heroMeta = metaParts.join(" · ");
+
+  // ── Session ring: completed blocks / total (else 0/1 by completion) ────
+  const totalBlocks = session?.blocks.length ?? 0;
+  const doneBlocks = session?.blocks.filter((b) => b.done).length ?? 0;
+  const sessionDone = session?.log.completed ?? false;
+  const sessionRingValue =
+    totalBlocks > 0 ? doneBlocks / totalBlocks : sessionDone ? 1 : 0;
+  const sessionRingLabel =
+    totalBlocks > 0 ? `${doneBlocks}/${totalBlocks}` : sessionDone ? "1/1" : "0/1";
+
+  // Fuel + Water rings (graceful 0 when nothing logged today).
+  const fuelRingValue = body.kcal / FUEL_GOAL_KCAL;
+  const waterRingValue = (body.water?.ml ?? 0) / WATER_GOAL_ML;
+
+  const streak = profile?.streak_count ?? 0;
+
+  return (
+    <>
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <header className="relative z-10 flex items-center justify-between px-0.5 pb-[18px] pt-2">
+        <div>
+          <div className="font-cond text-[11px] uppercase tracking-[2px] text-muted">
+            {phaseLine}
+          </div>
+          <h1 className="mt-[3px] font-display text-[30px] font-bold uppercase leading-none tracking-wide text-text">
+            Today
+          </h1>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <StatPill>🔥 {streak}</StatPill>
+          <Link
+            href="/appearance"
+            aria-label="Appearance settings"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5 fill-none stroke-text [stroke-width:1.8]"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" />
+            </svg>
+          </Link>
+        </div>
+      </header>
+
+      {/* ── Incoming nudges (cooperative; marks them seen on view) ───────── */}
+      <NudgeInbox
+        nudges={nudges.map((n) => ({
+          id: n.id,
+          fromName: n.fromName,
+          createdAt: n.created_at,
+          seen: n.seen,
+        }))}
+        unseenCount={unseenNudges}
+      />
+
+      {/* ── Hero session card (blaze → gold) ────────────────────────────── */}
+      <section className="relative z-10 mb-3.5 overflow-hidden rounded-[26px] bg-grad p-5 text-bg">
+        {/* soft corner highlight */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-10 -top-10 h-[170px] w-[170px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,255,255,.28), transparent 70%)",
+          }}
+        />
+        {/* ridge silhouette */}
+        <svg
+          aria-hidden
+          className="pointer-events-none absolute bottom-0 left-0 right-0 opacity-[0.18]"
+          viewBox="0 0 390 100"
+          preserveAspectRatio="none"
+        >
+          <polygon
+            points="0,100 0,60 80,30 150,55 230,20 320,50 390,30 390,100"
+            fill="#1c1a17"
+          />
+        </svg>
+
+        <div className="relative z-10">
+          <div className="font-cond text-[11px] font-bold uppercase tracking-[2px] opacity-80">
+            Today&apos;s Session{eyebrowSource ? ` · ${eyebrowSource}` : ""}
+          </div>
+          <h2 className="my-1 mt-2 font-display text-2xl font-bold uppercase leading-[1.05] tracking-wide">
+            {sessionTitle}
+          </h2>
+
+          {hasSession ? (
+            <>
+              <div className="text-[13px] font-semibold opacity-85">
+                {heroMeta || "Session ready"}
+              </div>
+              <div className="mt-4 flex gap-2.5">
+                <a
+                  href={videoUrl ?? "https://mtntough.com"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`flex flex-1 items-center justify-center gap-[7px] rounded-[14px] bg-[#1c1a17] p-[13px] font-display text-[13px] font-semibold uppercase tracking-wide text-[#ece6da] ${
+                    videoUrl ? "" : "opacity-70"
+                  }`}
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  Watch on MTNTOUGH
+                </a>
+                <Link
+                  href="/checkin"
+                  className="flex flex-1 items-center justify-center gap-[7px] rounded-[14px] border-[1.5px] border-[rgba(28,26,23,.4)] bg-[rgba(28,26,23,.15)] p-[13px] font-display text-[13px] font-semibold uppercase tracking-wide text-bg"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 fill-none stroke-current [stroke-width:3]"
+                  >
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                  Check In
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-[13px] font-semibold opacity-85">
+                No active program — browse programs to start training.
+              </div>
+              <div className="mt-4">
+                <Link
+                  href="/programs"
+                  className="inline-flex items-center justify-center gap-[7px] rounded-[14px] bg-[#1c1a17] px-4 p-[13px] font-display text-[13px] font-semibold uppercase tracking-wide text-[#ece6da]"
+                >
+                  Browse programs
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* ── Activity rings ──────────────────────────────────────────────── */}
+      <div className="relative z-10 mb-3.5 flex gap-3">
+        <RingCard
+          value={sessionRingValue}
+          color="var(--accent)"
+          centerLabel={null}
+          valueCaption={sessionRingLabel}
+          label="Session"
+        />
+        <RingCard
+          value={fuelRingValue}
+          color="var(--accent2)"
+          centerLabel={null}
+          valueCaption={pct(fuelRingValue)}
+          label="Fuel"
+        />
+        <RingCard
+          value={waterRingValue}
+          color="var(--gold)"
+          centerLabel={null}
+          valueCaption={pct(waterRingValue)}
+          label="Water"
+        />
+      </div>
+
+      {/* ── Crew · Today strip ──────────────────────────────────────────── */}
+      <SectionHeader action={<Link href="/crew">Open Crew →</Link>}>
+        Crew · Today
+      </SectionHeader>
+
+      {crew.totalCount > 0 ? (
+        <Link href="/crew" className="block">
+          <Card className="mb-2.5 flex items-center gap-2.5 p-3.5">
+            <div className="flex">
+              {crew.members.slice(0, 4).map((m, i) => (
+                <span
+                  key={m.user_id}
+                  className="flex h-[38px] w-[38px] items-center justify-center rounded-full border-2 border-bg font-display text-sm font-bold text-bg"
+                  style={{
+                    background: avatarColor(m.user_id || m.display_name),
+                    marginRight: i < Math.min(crew.members.length, 4) - 1 ? -10 : 0,
+                  }}
+                >
+                  {initials(m.display_name)}
+                </span>
+              ))}
+            </div>
+            <div className="flex-1 text-[13px] text-muted">
+              <b className="font-display text-text">
+                {crew.trainedCount} of {crew.totalCount}
+              </b>{" "}
+              crew trained today
+            </div>
+            <span className="font-display text-gold">›</span>
+          </Card>
+        </Link>
+      ) : (
+        <Card className="mb-2.5 flex items-center gap-3 p-3.5">
+          <div className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-line bg-surface2 text-base">
+            👋
+          </div>
+          <div className="flex-1 text-[13px] text-muted">
+            No crew yet — <span className="text-text">join or start one</span> to
+            train together.
+          </div>
+          <Link href="/crew" className="font-display text-gold">
+            ›
+          </Link>
+        </Card>
+      )}
+
+      {/* ── Primary CTA ─────────────────────────────────────────────────── */}
+      {hasSession ? (
+        <Link
+          href="/checkin"
+          className="relative z-10 mt-1 flex w-full items-center justify-center gap-2 rounded-[18px] bg-grad p-[17px] font-display text-[15px] font-semibold uppercase tracking-wide text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)]"
+        >
+          <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] fill-current">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          {sessionDone ? "Review Today's Session" : "Start Today's Session"}
+        </Link>
+      ) : (
+        <Link
+          href="/programs"
+          className="relative z-10 mt-1 flex w-full items-center justify-center gap-2 rounded-[18px] bg-grad p-[17px] font-display text-[15px] font-semibold uppercase tracking-wide text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)]"
+        >
+          <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] fill-none stroke-current [stroke-width:2.4]">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Browse Programs
+        </Link>
+      )}
+    </>
+  );
+}
+
+/* ── Local presentational helper: one ring card ─────────────────────────── */
+function RingCard({
+  value,
+  color,
+  centerLabel,
+  valueCaption,
+  label,
+}: {
+  value: number;
+  color: string;
+  centerLabel: ReactNode;
+  valueCaption: ReactNode;
+  label: string;
+}) {
+  return (
+    <Card className="flex-1 p-3.5 text-center">
+      <div className="flex justify-center">
+        <Ring value={value} color={color} size={56} stroke={6} label={centerLabel} />
+      </div>
+      <div className="mt-1.5 font-display text-lg font-bold text-text">
+        {valueCaption}
+      </div>
+      <div className="mt-0.5 font-cond text-[10px] uppercase tracking-wide text-muted">
+        {label}
+      </div>
+    </Card>
+  );
+}
