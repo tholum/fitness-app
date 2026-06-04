@@ -24,6 +24,7 @@ import {
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui";
+import { useConfirm } from "@/components/Confirm";
 
 /* ── shared shapes (kept local so the file is self-contained) ─────────── */
 export interface DayRow {
@@ -94,7 +95,7 @@ function Sheet({
         onClick={onClose}
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
-      <div className="relative z-10 w-full max-w-[430px] rounded-t-card border border-b-0 border-line-solid bg-surface-solid px-5 pb-[calc(24px+env(safe-area-inset-bottom))] pt-4 shadow-[0_-20px_60px_rgba(0,0,0,.6)]">
+      <div className="relative z-10 max-h-[90dvh] w-full max-w-[430px] overflow-y-auto rounded-t-card border border-b-0 border-line-solid bg-surface-solid px-5 pb-[calc(24px+env(safe-area-inset-bottom))] pt-4 shadow-[0_-20px_60px_rgba(0,0,0,.6)]">
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-line-solid" />
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-lg font-bold uppercase tracking-[0.04em] text-text">
@@ -198,6 +199,7 @@ export function ProgramTreeProvider({
   children,
 }: ProgramTreeProviderProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [defaults, setDefaults] = useState({ phase: 1, week: 1, day: 1 });
   const [pending, startTransition] = useTransition();
@@ -234,12 +236,19 @@ export function ProgramTreeProvider({
   }
 
   function deleteDay(id: string) {
-    if (!window.confirm("Delete this day and all its blocks?")) return;
-    setBusyId(id);
-    startTransition(async () => {
-      await deleteDayAction(id, programId);
-      setBusyId(null);
-      router.refresh();
+    void confirm({
+      title: "Delete day?",
+      message: "This removes the day and all its blocks.",
+      confirmLabel: "Delete",
+      destructive: true,
+    }).then((ok) => {
+      if (!ok) return;
+      setBusyId(id);
+      startTransition(async () => {
+        await deleteDayAction(id, programId);
+        setBusyId(null);
+        router.refresh();
+      });
     });
   }
 

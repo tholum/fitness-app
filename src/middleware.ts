@@ -31,6 +31,27 @@ const STATIC_SECURITY_HEADERS: Record<string, string> = {
  * avatar URLs. See next.config.mjs for the resource-allowance rationale.
  */
 function buildCsp(nonce: string): string {
+  // In `next dev`, React Fast Refresh / HMR evaluates code via new Function(),
+  // which requires 'unsafe-eval'. This is added ONLY in development so the
+  // production CSP stays strict (no eval). Likewise, derive the configured
+  // Supabase origin from env and allow it in connect-src so the browser SDK can
+  // reach a local stack (http://127.0.0.1:54321) or a self-hosted instance, not
+  // just *.supabase.co.
+  const isDev = process.env.NODE_ENV !== "production";
+  const devScript = isDev ? " 'unsafe-eval'" : "";
+
+  const supabaseOrigins = (() => {
+    const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!raw) return "";
+    try {
+      const { protocol, host } = new URL(raw);
+      const ws = protocol === "https:" ? "wss:" : "ws:";
+      return ` ${protocol}//${host} ${ws}//${host}`;
+    } catch {
+      return "";
+    }
+  })();
+
   return [
     "default-src 'self'",
     // challenges.cloudflare.com: the Turnstile login captcha (gated on
@@ -39,11 +60,11 @@ function buildCsp(nonce: string): string {
     // an iframe (frame-src) and talks home over connect-src. All three are
     // additive allowances of one trusted host, not a relaxation of the
     // existing self/nonce model.
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline' https://challenges.cloudflare.com`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'${devScript} https://challenges.cloudflare.com`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
+    `connect-src 'self' https://*.supabase.co wss://*.supabase.co${supabaseOrigins} https://challenges.cloudflare.com`,
     "frame-ancestors 'none'",
     "frame-src https://challenges.cloudflare.com",
     "base-uri 'self'",

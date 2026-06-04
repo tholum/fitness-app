@@ -25,6 +25,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { Card, SectionHeader } from "@/components/ui";
+import { useConfirm } from "@/components/Confirm";
 import { validateVideoUrl } from "@/lib/format";
 
 /* ── shared shapes (kept local so the file is self-contained) ─────────── */
@@ -708,6 +709,7 @@ function BlockCard({
     reorderExerciseRowsAction,
   } = props;
   const router = useRouter();
+  const confirm = useConfirm();
   const [pending, startTransition] = useTransition();
 
   const [editOpen, setEditOpen] = useState(false);
@@ -749,10 +751,17 @@ function BlockCard({
   }
 
   function removeBlock() {
-    if (!window.confirm(`Delete block "${block.label}" and its exercises?`)) return;
-    startTransition(async () => {
-      await deleteBlockAction(block.id, programId, day.id);
-      router.refresh();
+    void confirm({
+      title: "Delete block?",
+      message: `Delete block "${block.label}" and its exercises?`,
+      confirmLabel: "Delete",
+      destructive: true,
+    }).then((ok) => {
+      if (!ok) return;
+      startTransition(async () => {
+        await deleteBlockAction(block.id, programId, day.id);
+        router.refresh();
+      });
     });
   }
 

@@ -2,12 +2,13 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BottomNav } from "@/components/BottomNav";
+import { ConfirmProvider } from "@/components/Confirm";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import {
-  ThemeProvider,
   normalizeAppearance,
   featureFlagScript,
   DEFAULT_APPEARANCE,
-} from "@/components/ThemeProvider";
+} from "@/components/appearance";
 
 /**
  * Authenticated app shell. Guards every (app) route, loads the user's
@@ -49,6 +50,12 @@ export default async function AppLayout({
           user who disabled a feature never sees it flash on during hydration. */}
       <script
         nonce={nonce}
+        // The browser strips the `nonce` attribute from the DOM after using it
+        // (security), so on hydration React sees server nonce vs. client "" and
+        // warns. The script is inert post-execution (it runs once before paint),
+        // so the mismatch is benign — suppress it rather than drop the nonce
+        // (which the CSP requires for this inline script to run at all).
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: featureFlagScript(appearance) }}
       />
       <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col bg-bg">
@@ -98,10 +105,21 @@ export default async function AppLayout({
           tabIndex={-1}
           className="no-scrollbar relative z-10 flex-1 overflow-y-auto px-[18px] pb-[100px] pt-2 outline-none"
         >
-          {children}
-        </main>
+          <ConfirmProvider>{children}</ConfirmProvider>
 
-        <BottomNav />
+          {/* BottomNav lives INSIDE <main> on purpose. <main> is
+              `relative z-10`, which forms a stacking context; the in-page
+              bottom sheets/modals render inside {children} at z-50. If the nav
+              were a sibling of <main>, its fixed z-40 would sit in the parent
+              column's context and outrank main's entire z-10 subtree —
+              painting the nav OVER every sheet and burying each sheet's submit
+              button (you literally could not tap "Add Day"). Rendering the nav
+              inside <main> puts the nav (z-40) and the sheets (z-50) in the
+              SAME stacking context, so a sheet correctly paints above the nav.
+              The nav stays viewport-fixed because <main> sets no containing
+              block for fixed elements (overflow alone doesn't). */}
+          <BottomNav />
+        </main>
       </div>
     </ThemeProvider>
   );

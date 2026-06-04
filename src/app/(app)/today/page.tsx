@@ -2,7 +2,7 @@ import { type ReactNode } from "react";
 import Link from "next/link";
 
 import { Card, Ring, SectionHeader, StatPill } from "@/components/ui";
-import { normalizeAppearance } from "@/components/ThemeProvider";
+import { normalizeAppearance } from "@/components/appearance";
 import {
   getProfile,
   getTodaySession,
