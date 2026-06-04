@@ -1181,3 +1181,36 @@ export async function saveAppearance(appearance: Appearance): Promise<ActionResu
   revalidatePath("/", "layout");
   return { ok: true };
 }
+
+// ── saveTrainingGoal ───────────────────────────────────────────────────────
+/**
+ * Persist the user's training goal (0009) and re-derive the streak. The streak
+ * rule lives server-side in set_my_training_goal() (SECURITY DEFINER), which
+ * validates input, writes only the caller's row, and calls recompute_my_stats().
+ *   • type "days"  → `days` = scheduled weekdays (0=Sun..6=Sat); rest days never
+ *                    break the streak.
+ *   • type "count" → `target` = sessions/week; streak counts consecutive weeks.
+ */
+export async function saveTrainingGoal(input: {
+  type: "days" | "count";
+  days: number[];
+  target: number;
+}): Promise<ActionResult> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { ok: false, error: "Not authenticated" };
+
+  if (input.type === "days" && input.days.length === 0) {
+    return { ok: false, error: "Pick at least one training day." };
+  }
+
+  const { error } = await supabase.rpc("set_my_training_goal", {
+    p_type: input.type,
+    p_days: input.days,
+    p_target: input.target,
+  });
+  if (error) return { ok: false, error: error.message };
+
+  // Streak (in the header), Today, and Progress all read the recomputed stats.
+  revalidatePath("/", "layout");
+  return { ok: true };
+}

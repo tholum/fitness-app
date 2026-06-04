@@ -134,6 +134,8 @@ export default async function TodayPage() {
   const waterRingValue = (body.water?.ml ?? 0) / WATER_GOAL_ML;
 
   const streak = profile?.streak_count ?? 0;
+  // Streak is measured in weeks for the "count" goal, days otherwise (0009).
+  const streakUnit = profile?.goal_type === "count" ? "w" : "d";
 
   return (
     <>
@@ -149,7 +151,10 @@ export default async function TodayPage() {
         </div>
         <div className="flex items-center gap-2.5">
           {/* Streak pill — gamification (hidden when that toggle is off). */}
-          <StatPill className="gamify-feature">🔥 {streak}</StatPill>
+          <StatPill className="gamify-feature">
+            🔥 {streak}
+            {streak > 0 ? streakUnit : ""}
+          </StatPill>
           <Link
             href="/appearance"
             aria-label="Appearance settings"

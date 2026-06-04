@@ -22,6 +22,8 @@ export type Json =
 
 // ── Enumerated column values ────────────────────────────────────────────
 export type Units = "imperial" | "metric";
+/** Training-goal mode (0009): specific weekdays vs. a flexible weekly count. */
+export type GoalType = "days" | "count";
 export type CrewRole = "owner" | "member";
 export type ProgramSource = "MTNTOUGH" | "custom" | string;
 export type BlockType =
@@ -46,6 +48,17 @@ export interface Profile {
   appearance: Json;
   /** Active crew for multi-crew switching (0002); null falls back to first membership. */
   active_crew_id: UUID | null;
+  /**
+   * Training-goal mode driving the streak (0009):
+   *   "days"  → streak counts the scheduled weekdays in `training_days`,
+   *             skipping rest days.
+   *   "count" → streak counts consecutive weeks hitting `weekly_target`.
+   */
+  goal_type: GoalType;
+  /** Scheduled weekdays for "days" mode: ints 0=Sun..6=Sat (Postgres dow). */
+  training_days: number[];
+  /** Weekly session target for "count" mode (1..7). */
+  weekly_target: number;
   streak_count: number;
   xp: number;
   level: number;
