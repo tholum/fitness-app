@@ -1,5 +1,5 @@
 export const meta = {
-  name: 'basecamp-completeness',
+  name: 'path-warden-completeness',
   description: 'Audit every page for functional gaps, then build the missing management features',
   phases: [
     { title: 'Audit', detail: 'per-domain reviewers: can a real user run & manage everything?' },
@@ -9,10 +9,10 @@ export const meta = {
   ],
 }
 
-const ROOT = '/Users/timholum/Projects/FitnessApp_Claude'
+const ROOT = '/home/tholum/Projects/fitness-app'
 
 const CTX = `
-BASECAMP is a Next.js 15 (App Router) + TS + Tailwind + Supabase PWA at ${ROOT}: a completion-first MTNTOUGH
+Path Warden is a Next.js 15 (App Router) + TS + Tailwind + Supabase PWA at ${ROOT}: a completion-first MTNTOUGH
 training tracker with body/nutrition logging and a COOPERATIVE crew (shared goals, feed, reactions, nudges — no
 ranking). Orient by reading: PROJECT-PLAN.md, design-prototypes/variant-4-basecamp/index.html, src/app/globals.css,
 tailwind.config.ts, supabase/migrations/0001_init.sql, and everything under src/app and src/lib.
@@ -125,7 +125,7 @@ You are the planner. Below are gaps found by the audit. Produce a CONCRETE, orde
    and correct RLS policies consistent with 0001 (owner-writes; crew-cooperative; private body/nutrition), plus indexes.
  - Define build tasks with DISJOINT 'files' lists (no two tasks edit the same file) so they run in parallel safely.
    The migration is written separately — feature tasks may ASSUME the new tables exist and reference them by name.
- - Keep tasks minimal but sufficient; match the BASECAMP look and cooperative-crew model. Prefer reusing
+ - Keep tasks minimal but sufficient; match the Path Warden look and cooperative-crew model. Prefer reusing
    src/components/ui.tsx primitives and adding actions to src/lib/actions.ts ONLY if you assign that file to exactly
    one task. Aim for <= 8 tasks.
 
@@ -162,7 +162,7 @@ Create/edit ONLY these files: ${t.files.join(', ')}
 Spec: ${t.spec}
 
 ${schemaSql ? `New tables available (migration ${migFile}) — reference them by the names defined here:\n${schemaSql}\n` : ''}
-Match the BASECAMP design system (tokens, Oswald display type, rounded cards, gradient accents) and the cooperative
+Match the Path Warden design system (tokens, Oswald display type, rounded cards, gradient accents) and the cooperative
 crew model. Wire forms to server actions; handle empty + loading states. Use "use client" only where needed and
 await the async server createClient(). Report exactly what you created/changed.`,
     { label: `build:${t.title.slice(0, 24)}`, phase: 'Build' }))

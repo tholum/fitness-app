@@ -1,5 +1,5 @@
 /**
- * BASECAMP — unit + date formatting helpers.
+ * Path Warden — unit + date formatting helpers.
  * Weight is stored in the DB in whatever the user's `units` implies for the UI,
  * but conversions here let screens render consistently regardless of source.
  */

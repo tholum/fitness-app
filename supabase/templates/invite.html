@@ -1,0 +1,130 @@
+<!--
+  Path Warden — CREW INVITE email (invite template).
+
+  This is NOT the scanner-sensitive sign-in path, so a clickable button using
+  {{ .ConfirmationURL }} is acceptable here. Keep it on-brand and provide a
+  plain-text fallback URL beneath the button.
+-->
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
+  <title>You&rsquo;re invited to join the crew on Path Warden</title>
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
+  <style>
+    body { margin: 0; padding: 0; width: 100% !important; }
+    img { border: 0; line-height: 100%; outline: none; text-decoration: none; }
+    a { text-decoration: none; }
+    @media only screen and (max-width: 480px) {
+      .pw-card { padding: 28px 22px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#10100c; color:#ece6da;">
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all; font-size:1px; line-height:1px; color:#10100c;">
+    You&rsquo;ve been invited to join the crew on Path Warden. Keep the crew honest.
+    &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#10100c;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+
+        <table role="presentation" width="480" cellpadding="0" cellspacing="0" border="0" style="width:480px; max-width:480px; margin:0 auto;">
+
+          <!-- ===== HEADER ===== -->
+          <tr>
+            <td style="background-color:#1c1a17; border-radius:16px 16px 0 0; padding:30px 36px 22px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="left" style="vertical-align:middle;">
+                    <span style="display:inline-block; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:20px; font-weight:800; letter-spacing:6px; text-transform:uppercase; color:#ece6da;">PATH&nbsp;WARDEN</span>
+                  </td>
+                  <td align="right" style="vertical-align:middle;">
+                    <span style="display:inline-block; line-height:0;">&#9650;</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background-color:#1c1a17; line-height:0; font-size:0;">
+              <div style="height:3px; background:#c8622d; background:linear-gradient(135deg,#c8622d 0%,#d9a441 100%);">&nbsp;</div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background-color:#1c1a17; padding:0 36px; line-height:0; font-size:0;">
+              <div style="height:14px; border-bottom:1px solid #2f2b26; opacity:0.6;">&nbsp;</div>
+            </td>
+          </tr>
+
+          <!-- ===== BODY ===== -->
+          <tr>
+            <td class="pw-card" style="background-color:#1c1a17; padding:26px 36px 30px;">
+
+              <h1 style="margin:0 0 10px; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:21px; font-weight:700; line-height:1.25; text-transform:uppercase; letter-spacing:1.5px; color:#ece6da;">
+                You&rsquo;re invited to the crew
+              </h1>
+
+              <p style="margin:0 0 26px; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; line-height:1.55; color:#9b9082;">
+                Someone wants you on the trail with them on <strong style="color:#ece6da;">Path Warden</strong> &mdash; the training tracker that keeps the whole crew honest. Accept your invite to set up your account and join in.
+              </p>
+
+              <!-- ===== CTA BUTTON (bulletproof for Outlook via VML) ===== -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="padding:4px 0 8px;">
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .ConfirmationURL }}" style="height:48px;v-text-anchor:middle;width:260px;" arcsize="25%" strokecolor="#c8622d" fillcolor="#c8622d">
+                      <w:anchorlock/>
+                      <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">Accept invite</center>
+                    </v:roundrect>
+                    <![endif]-->
+                    <!--[if !mso]><!-- -->
+                    <a href="{{ .ConfirmationURL }}" style="display:inline-block; background:#c8622d; background:linear-gradient(135deg,#c8622d 0%,#d9a441 100%); color:#ffffff; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:1px; line-height:48px; padding:0 36px; border-radius:12px; text-decoration:none;">
+                      Accept invite
+                    </a>
+                    <!--<![endif]-->
+                  </td>
+                </tr>
+              </table>
+
+              <!-- plain fallback URL -->
+              <p style="margin:18px 0 0; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:12px; line-height:1.5; color:#9b9082;">
+                If the button doesn&rsquo;t work, copy and paste this link into your browser:<br>
+                <a href="{{ .ConfirmationURL }}" style="color:#d9a441; text-decoration:underline; word-break:break-all;">{{ .ConfirmationURL }}</a>
+              </p>
+
+              <p style="margin:18px 0 0; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:13px; line-height:1.55; color:#9b9082;">
+                This invite expires in <strong style="color:#ece6da;">1 hour</strong>. If you didn&rsquo;t expect this, ignore this email.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- ===== FOOTER ===== -->
+          <tr>
+            <td style="background-color:#10100c; border-radius:0 0 16px 16px; padding:22px 36px 26px; border-top:1px solid #2f2b26;">
+              <p style="margin:0 0 6px; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:#7a8b52;">
+                Keep the crew honest.
+              </p>
+              <p style="margin:0; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:11px; line-height:1.5; color:#9b9082;">
+                Path Warden &middot; <a href="https://pathwarden.app" style="color:#9b9082; text-decoration:underline;">pathwarden.app</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

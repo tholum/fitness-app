@@ -8,13 +8,13 @@ import type { ReactNode } from "react";
    BOTTOM NAV
    Fixed, blurred bar with the center [FAB Check-In] flanked by primary
    destinations: Today · Crew · [FAB] · Body · Progress · Account.
-   This mirrors the BASECAMP prototype's airy 4+FAB rhythm (Today · Crew
+   This mirrors the Path Warden prototype's airy 4+FAB rhythm (Today · Crew
    · [FAB] · Body · Progress) and keeps Account as the one extra tab: it
    is the only entry to profile + sign-out and doubles as the management
    hub, surfacing Programs / Exercises / Appearance as quick links (so
    plan authoring stays reachable without its own persistent tab — gaps
    1,26,32). Active route highlights in the accent color.
-   Ported from the BASECAMP prototype's <nav class="nav">.
+   Ported from the Path Warden prototype's <nav class="nav">.
    ════════════════════════════════════════════════════════════════════ */
 
 interface NavItem {

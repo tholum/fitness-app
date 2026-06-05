@@ -15,11 +15,12 @@ Source master: `icon.svg` (editable vector) and `icon-1024.png` (rendered 1024²
 
 ## Art direction
 
-Match the BASECAMP look (see `design-prototypes/variant-4-basecamp/index.html`):
+Match the Path Warden look (rugged, earthy, premium-outdoor):
 
 - Background `#1c1a17` (matches `theme_color` / `background_color`).
 - Blaze→gold gradient mark: `linear-gradient(135deg, #c8622d, #d9a441)`.
-- A mountain/summit glyph reads well at small sizes.
+- A summit ridge sheltering a "W" path-notch glyph reads well at small sizes —
+  the warden's peak above, the trail through it below.
 
 ## Generating them
 

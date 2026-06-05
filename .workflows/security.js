@@ -1,6 +1,6 @@
 export const meta = {
-  name: 'basecamp-security',
-  description: 'Adversarial security audit of the BASECAMP app, confirm findings, remediate, re-verify',
+  name: 'path-warden-security',
+  description: 'Adversarial security audit of the Path Warden app, confirm findings, remediate, re-verify',
   phases: [
     { title: 'Audit', detail: 'parallel attackers: RLS, auth/session, secrets, injection/XSS, deps, infra' },
     { title: 'Confirm', detail: 'adversarially verify each finding is real (kill false positives)' },
@@ -9,10 +9,10 @@ export const meta = {
   ],
 }
 
-const ROOT = '/Users/timholum/Projects/FitnessApp_Claude'
+const ROOT = '/home/tholum/Projects/fitness-app'
 
 const CTX = `
-You are performing a SECURITY review of BASECAMP, a Next.js 15 (App Router) + TypeScript + Supabase PWA at
+You are performing a SECURITY review of Path Warden, a Next.js 15 (App Router) + TypeScript + Supabase PWA at
 ${ROOT}. It is a completion-first MTNTOUGH tracker with a cooperative crew (shared feed, reactions, nudges).
 THREAT MODELS to assume:
   (A) an anonymous unauthenticated attacker hitting the app + Supabase REST/Realtime directly with the
@@ -153,7 +153,7 @@ const remediations = await parallel(groups.map(([file, fs]) => () => {
     : `Remediate ${file}. For RLS/policy changes, ADD a new migration a new highest-numbered migration (list supabase/migrations/ and pick the next free index, e.g. supabase/migrations/0003_security.sql) rather than editing 0001_init.sql in place.`
   return agent(`${CTX}
 You are a security remediation engineer. ${target}
-Apply ALL confirmed findings below with minimal, correct changes that preserve app behavior and the BASECAMP look
+Apply ALL confirmed findings below with minimal, correct changes that preserve app behavior and the Path Warden look
 + cooperative-crew model. Prefer defense-in-depth (fix RLS AND add server-side authorization checks where relevant).
 Do not weaken any existing control. Report exactly what you changed per finding.
 

@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════
--- BASECAMP — 0002 features: program authoring, exercise library,
+-- PATH WARDEN — 0002 features: program authoring, exercise library,
 -- per-exercise detail, enrollment/scheduler, crew lifecycle helpers,
 -- and an active-crew pointer. Consistent with 0001 RLS conventions:
 --   • owner-writes (owner_id = auth.uid())

@@ -12,7 +12,7 @@ import {
 
 /**
  * Authenticated app shell. Guards every (app) route, loads the user's
- * appearance preferences, and renders the BASECAMP phone-style column
+ * appearance preferences, and renders the Path Warden phone-style column
  * (centered, max ~430px) with the fixed bottom navigation.
  */
 export default async function AppLayout({

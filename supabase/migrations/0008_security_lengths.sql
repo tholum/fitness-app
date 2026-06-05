@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════
--- BASECAMP — 0005 security: free-text length CHECK constraints
+-- PATH WARDEN — 0005 security: free-text length CHECK constraints
 --
 -- Finding [low] — server actions validated non-empty but never capped length.
 -- The anon/publishable key ships to the browser, so an authenticated user can

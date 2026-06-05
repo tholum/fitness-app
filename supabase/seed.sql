@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════
--- BASECAMP — seed data
+-- PATH WARDEN — seed data
 --
 -- Loaded after migrations on `supabase db reset` (see supabase/config.toml →
 -- [db.seed] sql_paths = ["./seed.sql"]). Safe to re-run: every INSERT uses a

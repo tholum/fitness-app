@@ -1,0 +1,120 @@
+<!--
+  Path Warden — NEW SIGNUP CONFIRMATION CODE email (confirmation template).
+
+  CODE-ONLY by design. Intentionally contains NO clickable confirmation link:
+  any URL here would be fetched (and its single-use token consumed) by corporate
+  mail scanners and link-preview bots BEFORE the user clicks, producing
+  otp_expired even on an immediate click. A 6-digit code has nothing for a bot
+  to consume.
+
+  The .Token var is the 6-digit OTP. This email deliberately does NOT use the .ConfirmationURL link variable.
+-->
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
+  <title>Confirm your Path Warden account</title>
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
+  <style>
+    body { margin: 0; padding: 0; width: 100% !important; }
+    img { border: 0; line-height: 100%; outline: none; text-decoration: none; }
+    a { text-decoration: none; }
+    @media only screen and (max-width: 480px) {
+      .pw-card { padding: 28px 22px !important; }
+      .pw-code { font-size: 38px !important; letter-spacing: 10px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#10100c; color:#ece6da;">
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all; font-size:1px; line-height:1px; color:#10100c;">
+    Confirm your Path Warden account with this 6-digit code. No link to click. Expires in 1 hour.
+    &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#10100c;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+
+        <table role="presentation" width="480" cellpadding="0" cellspacing="0" border="0" style="width:480px; max-width:480px; margin:0 auto;">
+
+          <!-- ===== HEADER ===== -->
+          <tr>
+            <td style="background-color:#1c1a17; border-radius:16px 16px 0 0; padding:30px 36px 22px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="left" style="vertical-align:middle;">
+                    <span style="display:inline-block; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:20px; font-weight:800; letter-spacing:6px; text-transform:uppercase; color:#ece6da;">PATH&nbsp;WARDEN</span>
+                  </td>
+                  <td align="right" style="vertical-align:middle;">
+                    <span style="display:inline-block; line-height:0;">&#9650;</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background-color:#1c1a17; line-height:0; font-size:0;">
+              <div style="height:3px; background:#c8622d; background:linear-gradient(135deg,#c8622d 0%,#d9a441 100%);">&nbsp;</div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background-color:#1c1a17; padding:0 36px; line-height:0; font-size:0;">
+              <div style="height:14px; border-bottom:1px solid #2f2b26; opacity:0.6;">&nbsp;</div>
+            </td>
+          </tr>
+
+          <!-- ===== BODY ===== -->
+          <tr>
+            <td class="pw-card" style="background-color:#1c1a17; padding:26px 36px 30px;">
+
+              <h1 style="margin:0 0 10px; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:21px; font-weight:700; line-height:1.25; text-transform:uppercase; letter-spacing:1.5px; color:#ece6da;">
+                Confirm your Path Warden account
+              </h1>
+
+              <p style="margin:0 0 24px; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; line-height:1.55; color:#9b9082;">
+                Welcome to the crew. Enter this code on the confirmation screen to set foot on the path. No link to click &mdash; just type the six digits.
+              </p>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="background-color:#10100c; border:1px solid #3a352e; border-radius:12px; padding:22px 16px;">
+                    <div class="pw-code" style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace; font-size:44px; font-weight:700; letter-spacing:14px; line-height:1; text-indent:14px; color:#d9a441; white-space:nowrap;">
+                      {{ .Token }}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:22px 0 0; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:13px; line-height:1.55; color:#9b9082;">
+                This code expires in <strong style="color:#ece6da;">1 hour</strong>. If you didn&rsquo;t request this, ignore this email.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- ===== FOOTER ===== -->
+          <tr>
+            <td style="background-color:#10100c; border-radius:0 0 16px 16px; padding:22px 36px 26px; border-top:1px solid #2f2b26;">
+              <p style="margin:0 0 6px; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:#7a8b52;">
+                Keep the crew honest.
+              </p>
+              <p style="margin:0; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:11px; line-height:1.5; color:#9b9082;">
+                Path Warden &middot; <a href="https://pathwarden.app" style="color:#9b9082; text-decoration:underline;">pathwarden.app</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════
--- BASECAMP — 0004 security: video_url stored-XSS hardening
+-- PATH WARDEN — 0004 security: video_url stored-XSS hardening
 --
 -- Finding #1 (stored XSS via a javascript: URL in a program day's video_url):
 -- The app-layer importers now reject any non-https / non-mtntough.com link

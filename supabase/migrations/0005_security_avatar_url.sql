@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════
--- BASECAMP — 0005 security: avatar_url scheme hardening
+-- PATH WARDEN — 0005 security: avatar_url scheme hardening
 --
 -- Finding (informational): profiles.avatar_url is stored with no scheme
 -- validation and is rendered as `<img src={avatar_url}>` in the owner's own

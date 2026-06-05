@@ -1,5 +1,5 @@
 /**
- * BASECAMP — TypeScript interfaces for every table in
+ * Path Warden — TypeScript interfaces for every table in
  * supabase/migrations/0001_init.sql and 0002_features.sql. Column names/types
  * mirror the schema exactly so query/action code can stay typed without
  * generated DB types.

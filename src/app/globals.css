@@ -4,7 +4,7 @@
 
 /* ════════════════════════════════════════════════════════════════════
    THEME-TOKEN ENGINE
-   Every color/shape/gradient is a CSS variable. The default is BASECAMP
+   Every color/shape/gradient is a CSS variable. The default is Path Warden
    (SUMMIT palette × FORGE layout). Switching [data-theme] or overriding
    --accent etc. (from a user's saved appearance) re-skins everything.
    ════════════════════════════════════════════════════════════════════ */

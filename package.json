@@ -1,8 +1,8 @@
 {
-  "name": "basecamp",
+  "name": "path-warden",
   "version": "0.1.0",
   "private": true,
-  "description": "BASECAMP — MTNTOUGH-style training tracker with cooperative crew accountability",
+  "description": "Path Warden — MTNTOUGH-style training tracker with cooperative crew accountability",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

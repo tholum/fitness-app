@@ -1,6 +1,6 @@
-# BASECAMP — Build Plan
+# Path Warden — Build Plan
 
-The real app behind the **BASECAMP** prototype (`design-prototypes/variant-4-basecamp/`).
+The real app behind the **Path Warden** prototype (`design-prototypes/variant-4-basecamp/`).
 SUMMIT palette × FORGE layout · completion-first tracking · cooperative crew.
 
 ## Stack (locked)
@@ -27,7 +27,7 @@ SUMMIT palette × FORGE layout · completion-first tracking · cooperative crew.
 ## To build (the team)
 1. **Auth** — `/login` (password + magic link tabs), `/auth/callback`, `/auth/confirm`, sign-out action.
 2. **App shell** — authed layout with bottom nav (Today · Crew · [FAB Check-In] · Body · Progress) + gear→Appearance; theme provider that reads `profiles.appearance`.
-3. **Screens** (port from the BASECAMP prototype, wired to Supabase):
+3. **Screens** (port from the Path Warden prototype, wired to Supabase):
    - **Today** — today's session card (Watch on MTNTOUGH / Check In), rings, crew-today strip.
    - **Check In** — block checklist, optional detail logging, "Share to crew" + Mark Complete (writes `session_logs` + `block_completions`, posts `feed_posts`).
    - **Crew** — weekly goal progress, "X of N trained today", activity feed, reactions, nudges, invite-by-code.

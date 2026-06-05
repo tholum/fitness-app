@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  BASECAMP app icon master.
-  SUMMIT palette: bg #1c1a17, blaze->gold gradient (135deg, #c8622d -> #d9a441).
-  A two-peak summit ridge glyph reads well at small sizes.
+  Path Warden app icon master.
+  Palette: bg #1c1a17, blaze->gold gradient (135deg, #c8622d -> #d9a441).
+  Mark: a single guardian summit peak (the warden) with a "W"-shaped
+  path notch carved through its base — the trail it keeps you on. The
+  notch reads as a W (Warden) and as a switchback path, while the peak
+  keeps the existing summit visual system.
   Art is kept within the inner ~80% safe zone so the same master also
   works as the maskable icon (see maskable-512.png recipe in README.md).
   Edit this file and re-run the export commands in README.md to regenerate
   the PNGs referenced by /manifest.webmanifest.
 -->
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="BASECAMP">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Path Warden">
   <defs>
     <linearGradient id="blaze" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#c8622d"/>
@@ -19,21 +22,20 @@
   <!-- background matches theme_color / background_color -->
   <rect width="512" height="512" fill="#1c1a17"/>
 
-  <!-- summit ridge mark, centred inside the 80% safe zone (~51px margin) -->
-  <g>
-    <!-- main two-peak ridge -->
-    <path
-      d="M86 372 L210 196 L268 268 L330 168 L426 372 Z"
-      fill="url(#blaze)"
-      stroke-linejoin="round"/>
-    <!-- snow caps on the two summits -->
-    <path
-      d="M210 196 L240 240 L210 226 L182 244 Z"
-      fill="#1c1a17"
-      opacity="0.92"/>
-    <path
-      d="M330 168 L360 232 L330 216 L302 234 Z"
-      fill="#1c1a17"
-      opacity="0.92"/>
+  <!-- guardian summit peak, centred inside the 80% safe zone (~51px margin) -->
+  <g fill="url(#blaze)" stroke-linejoin="round">
+    <!-- single bold peak: base 96..416, apex at 256,118 -->
+    <path d="M256 118 L416 396 L96 396 Z"/>
   </g>
+
+  <!-- W-shaped path notch carved through the base (bg-coloured cut-out) -->
+  <path
+    d="M160 396 L196 300 L232 360 L268 300 L304 360 L340 300 L376 396 Z"
+    fill="#1c1a17"/>
+
+  <!-- snow cap on the summit -->
+  <path
+    d="M256 118 L296 188 L256 168 L216 192 Z"
+    fill="#1c1a17"
+    opacity="0.92"/>
 </svg>

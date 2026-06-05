@@ -1,8 +1,8 @@
-# BASECAMP
+# Path Warden
 
 > Train the program. Keep the crew honest.
 
-BASECAMP is a mobile-first **Next.js 15 (App Router) + TypeScript + Tailwind +
+Path Warden is a mobile-first **Next.js 15 (App Router) + TypeScript + Tailwind +
 Supabase** PWA for MTNTOUGH-style training-program tracking, body & nutrition
 logging, and **cooperative** crew accountability (shared goals, a feed,
 reactions, and nudges — no competitive ranking).
@@ -157,8 +157,8 @@ docker build \
   --build-arg NEXT_PUBLIC_SUPABASE_URL="https://<ref>.supabase.co" \
   --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="sb_publishable_…" \
   --build-arg NEXT_PUBLIC_SITE_URL="http://localhost:3000" \
-  -t basecamp:latest .
-docker run --env-file .env -p 3000:3000 basecamp:latest
+  -t path-warden:latest .
+docker run --env-file .env -p 3000:3000 path-warden:latest
 ```
 
 > The `NEXT_PUBLIC_*` vars must be present at **build** time — Next.js inlines
@@ -193,3 +193,56 @@ design-prototypes/    # the HTML visual targets this app ports
 ```
 
 See [`PROJECT-PLAN.md`](PROJECT-PLAN.md) for the product/feature plan.
+
+---
+
+## Path Warden — production cutover
+
+These are the **manual** steps to bring `https://pathwarden.app` live. They can't
+be done from this repo — they touch DNS, the droplet, and the hosted Supabase
+dashboard. The Supabase project ref is **unchanged** (`swfcomtbjabplzsisazm`) —
+this is the same project, just a new public domain.
+
+### 1. DNS + TLS + nginx (the droplet)
+
+- Point **DNS** `A`/`AAAA` records for `pathwarden.app` at the droplet's IP.
+- Issue a **TLS cert** for the new host:
+  `certbot --nginx -d pathwarden.app` (add `-d www.pathwarden.app` if you serve
+  the apex+www).
+- Update the **nginx** vhost `server_name` to `pathwarden.app` (rename
+  `/etc/nginx/conf.d/fit.timholum.com.conf` → `pathwarden.app.conf`,
+  set `server_name pathwarden.app;`), then `nginx -t && systemctl reload nginx`.
+
+### 2. systemd service env
+
+- In the app's `EnvironmentFile` (`/home/fit/app/.env`), set
+  `NEXT_PUBLIC_SITE_URL=https://pathwarden.app`.
+- `NEXT_PUBLIC_*` is **build-time inlined**, so rebuild locally with the new
+  value and redeploy (rebuild → tar standalone+static+public → scp → extract →
+  `systemctl restart` the service). Setting it only in `.env` at runtime is not
+  enough for the client bundle.
+
+### 3. Supabase Dashboard — URL configuration (project `swfcomtbjabplzsisazm`)
+
+- **Auth → URL Configuration → Site URL** = `https://pathwarden.app`.
+- **Redirect URLs** → add:
+  - `https://pathwarden.app/auth/callback`
+  - `https://pathwarden.app/auth/confirm`
+
+### 4. Supabase Dashboard — Email Templates
+
+The hosted project does **not** read `supabase/config.toml`, so the on-brand
+templates must be pasted in by hand:
+
+- **Auth → Email Templates** → for each of **Magic Link, Confirm signup,
+  Reset password, Change email, Invite user**, paste the matching template from
+  [`supabase/templates/`](supabase/templates/) and set the on-brand subject.
+- Make the **Magic Link** template **code-only**: use `{{ .Token }}` and
+  **remove** `{{ .ConfirmationURL }}`. A clicked link can be pre-consumed by
+  mail scanners, causing `otp_expired` on the user's first click.
+
+### 5. Optional — custom SMTP sender domain
+
+- For deliverability, configure custom SMTP with a `no-reply@pathwarden.app`
+  sender (Auth → SMTP Settings), and add the SPF/DKIM records the provider
+  gives you to the `pathwarden.app` DNS zone.

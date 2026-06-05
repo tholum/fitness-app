@@ -130,6 +130,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [magicSent, setMagicSent] = useState(false);
+  const [code, setCode] = useState("");
 
   const { enabled: captchaEnabled, token: captchaToken, reset: resetCaptcha, containerRef: captchaRef } =
     useTurnstile();
@@ -142,6 +143,7 @@ function LoginForm() {
     setMode(m);
     setError(null);
     setMagicSent(false);
+    setCode("");
   }
 
   async function handlePassword(e: React.FormEvent) {
@@ -184,6 +186,13 @@ function LoginForm() {
     }
   }
 
+  // Sends the email OTP. The email template is configured to deliver a 6-digit
+  // *code* (no clickable link) — see supabase/templates/magic_link.html. A
+  // code-only email is immune to the single-use-token consumption that breaks
+  // magic links: corporate mail scanners / link-preview bots fetch (and thereby
+  // burn) any URL in the message before the user clicks, producing the classic
+  // "otp_expired even though I clicked immediately" failure. There is no URL to
+  // fetch here, so the user types the code into the next step instead.
   async function handleMagic(e: React.FormEvent) {
     e.preventDefault();
     if (captchaMissing) {
@@ -197,17 +206,40 @@ function LoginForm() {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: {
-          emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-          captchaToken: captcha,
-        },
+        options: { captchaToken: captcha },
       });
       if (error) throw error;
+      setCode("");
       setMagicSent(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       resetCaptcha();
+      setLoading(false);
+    }
+  }
+
+  // Exchanges the emailed 6-digit code for a session directly (no PKCE / no
+  // /auth/callback round-trip), which also sidesteps the cross-device breakage
+  // magic links suffer when opened in a different browser than they were
+  // requested from.
+  async function handleVerifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    const supabase = createClient();
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: code.trim(),
+        type: "email",
+      });
+      if (error) throw error;
+      router.push(next);
+      router.refresh();
+    } catch {
+      setError("That code is invalid or expired. Request a new one.");
+    } finally {
       setLoading(false);
     }
   }
@@ -240,7 +272,7 @@ function LoginForm() {
             Train the program
           </div>
           <h1 className="mt-1 font-display text-5xl font-bold uppercase leading-none tracking-wide text-text">
-            Basecamp
+            Path Warden
           </h1>
           <p className="mt-3 text-sm text-muted">
             Keep the crew honest.
@@ -323,15 +355,65 @@ function LoginForm() {
               </h2>
 
               {magicSent ? (
-                <div className="rounded-[14px] border border-line bg-surface2 p-5 text-center">
-                  <div className="font-display text-base font-semibold uppercase tracking-wide text-text">
-                    Check your email
+                <div className="flex flex-col gap-4">
+                  <div className="rounded-[14px] border border-line bg-surface2 p-5 text-center">
+                    <div className="font-display text-base font-semibold uppercase tracking-wide text-text">
+                      Check your email
+                    </div>
+                    <p className="mt-2 text-sm text-muted">
+                      We sent a 6-digit code to{" "}
+                      <span className="text-text">{email}</span>. Enter it below
+                      to sign in.
+                    </p>
                   </div>
-                  <p className="mt-2 text-sm text-muted">
-                    We sent a sign-in link to{" "}
-                    <span className="text-text">{email}</span>. Open it on this
-                    device to continue.
-                  </p>
+
+                  <label className="flex flex-col gap-1.5">
+                    <span className="font-cond text-[11px] uppercase tracking-wider text-muted">
+                      Sign-in code
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      pattern="[0-9]*"
+                      maxLength={6}
+                      value={code}
+                      onChange={(e) =>
+                        setCode(e.target.value.replace(/\D/g, ""))
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && code.length === 6) {
+                          handleVerifyCode(e);
+                        }
+                      }}
+                      placeholder="123456"
+                      autoFocus
+                      className="w-full rounded-[14px] border border-line-solid bg-bg2 px-4 py-3 text-center font-display text-2xl tracking-[8px] text-text placeholder:text-faint placeholder:tracking-[8px] outline-none focus:border-accent"
+                    />
+                  </label>
+
+                  {error && <ErrorNote message={error} />}
+
+                  <button
+                    type="button"
+                    onClick={handleVerifyCode}
+                    disabled={loading || code.length < 6}
+                    className="mt-1 w-full rounded-[18px] bg-grad px-4 py-4 font-display text-[15px] font-semibold uppercase tracking-wider text-bg shadow-[0_8px_24px_rgba(200,98,45,0.3)] disabled:opacity-60"
+                  >
+                    {loading ? "..." : "Verify & sign in"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMagicSent(false);
+                      setCode("");
+                      setError(null);
+                    }}
+                    className="text-center font-cond text-[11px] uppercase tracking-wider text-gold"
+                  >
+                    Use a different email / resend code
+                  </button>
                 </div>
               ) : (
                 <>
@@ -380,7 +462,7 @@ export default function LoginPage() {
       fallback={
         <main className="mx-auto flex min-h-screen w-full max-w-[440px] items-center justify-center px-6">
           <div className="font-display text-5xl font-bold uppercase tracking-wide text-text">
-            Basecamp
+            Path Warden
           </div>
         </main>
       }

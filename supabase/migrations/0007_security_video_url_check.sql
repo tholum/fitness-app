@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════
--- BASECAMP — 0007 security: video_url scheme/host CHECK constraints
+-- PATH WARDEN — 0007 security: video_url scheme/host CHECK constraints
 --
 -- Finding [HIGH — cross-user stored XSS]: program_days.video_url and
 -- exercises.default_video_url are rendered DIRECTLY as anchor hrefs:

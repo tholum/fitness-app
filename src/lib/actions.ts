@@ -1,7 +1,7 @@
 "use server";
 
 /**
- * BASECAMP — server actions (mutations). Each uses the server Supabase client
+ * Path Warden — server actions (mutations). Each uses the server Supabase client
  * (RLS enforces ownership) and revalidates the affected route(s).
  *
  * Conventions kept stable for callers:

@@ -1,8 +1,17 @@
 -- ════════════════════════════════════════════════════════════════════
--- BASECAMP — initial schema + Row-Level Security
+-- PATH WARDEN — initial schema + Row-Level Security
 -- Model: solo training-program tracking (completion-first) + cooperative
 -- crews (shared goals, feed, reactions, nudges — no competitive ranking).
 -- ════════════════════════════════════════════════════════════════════
+
+-- ── EXTENSIONS ──────────────────────────────────────────────────────────
+-- pgcrypto provides gen_random_bytes() (used below for crew invite codes).
+-- Installed into the dedicated `extensions` schema, matching Supabase's
+-- hosted convention. The local stack pre-installs it there too, so this is a
+-- no-op locally — but a hosted project has no such guarantee, so we make the
+-- dependency explicit. Calls below are schema-qualified so resolution does
+-- not depend on the migration session's search_path.
+create extension if not exists pgcrypto with schema extensions;
 
 -- ── PROFILES ───────────────────────────────────────────────────────────
 create table public.profiles (
@@ -40,7 +49,7 @@ create trigger on_auth_user_created
 create table public.crews (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
-  invite_code text not null unique default encode(gen_random_bytes(4),'hex'),
+  invite_code text not null unique default encode(extensions.gen_random_bytes(4),'hex'),
   weekly_goal int  not null default 4,          -- target sessions/week per member
   created_by  uuid not null references public.profiles (id),
   created_at  timestamptz not null default now()

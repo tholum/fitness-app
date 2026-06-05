@@ -6,7 +6,7 @@
    updateProfile server action, plus a Sign Out control that POSTs to
    /auth/signout. Styling is strictly theme-token Tailwind (Card/Button
    tokens) so it re-skins with the active theme/accent, matching the
-   BASECAMP look. Field / SubmitBtn / ErrorNote are re-implemented locally
+   Path Warden look. Field / SubmitBtn / ErrorNote are re-implemented locally
    (mirrors body/_components.tsx) so this task stays self-contained.
    ════════════════════════════════════════════════════════════════════ */
 

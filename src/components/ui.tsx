@@ -3,7 +3,7 @@
 import { type ReactNode, type HTMLAttributes } from "react";
 
 /* ════════════════════════════════════════════════════════════════════
-   BASECAMP UI primitives.
+   Path Warden UI primitives.
    Generic, typed building blocks used across every screen. Styling is
    strictly via theme-token Tailwind classes (bg-surface, text-text, …)
    so they re-skin automatically with the active theme/accent.

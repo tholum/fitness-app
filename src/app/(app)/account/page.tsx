@@ -10,7 +10,7 @@ import { ProfileForm, SignOutButton } from "./_components";
    renders an editable display_name + avatar_url card (→ updateProfile)
    and a Sign Out control (POSTs to /auth/signout). Also surfaces quick
    links into Appearance / Programs / Exercises so management screens are
-   reachable from one place. Styled with BASECAMP Card/Button tokens.
+   reachable from one place. Styled with Path Warden Card/Button tokens.
    ════════════════════════════════════════════════════════════════════ */
 
 export const dynamic = "force-dynamic";
@@ -109,7 +109,7 @@ export default async function AccountPage() {
       <header className="relative z-10 flex items-center justify-between px-0.5 pb-[18px] pt-2">
         <div>
           <div className="font-cond text-[11px] uppercase tracking-[0.18em] text-muted">
-            Your basecamp
+            Your path
           </div>
           <h1 className="mt-[3px] font-display text-3xl font-bold uppercase leading-none tracking-[0.03em] text-text">
             Account

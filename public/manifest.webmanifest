@@ -1,6 +1,6 @@
 {
-  "name": "BASECAMP",
-  "short_name": "BASECAMP",
+  "name": "Path Warden",
+  "short_name": "Path Warden",
   "description": "Train the program. Keep the crew honest.",
   "start_url": "/today",
   "scope": "/",

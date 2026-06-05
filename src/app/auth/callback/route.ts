@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { publicOrigin } from "@/lib/origin";
 
 /**
  * Constrain the caller-supplied `next` to a local, same-origin path so the
@@ -18,7 +19,8 @@ function safeNext(raw: string | null): string {
  * we exchange for a session, then forward to `next` (default /today).
  */
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = publicOrigin(request);
   const code = searchParams.get("code");
   const next = safeNext(searchParams.get("next"));
 

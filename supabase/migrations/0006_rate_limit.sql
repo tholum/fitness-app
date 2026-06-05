@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════
--- BASECAMP — 0006 nudge rate limiting (Finding 1, abuse / harassment)
+-- PATH WARDEN — 0006 nudge rate limiting (Finding 1, abuse / harassment)
 -- Closes the server-side half of the auth/abuse finding for nudges. The
 -- auth-call throttle (sign-in / sign-up / magic link) is handled outside SQL:
 --   • Supabase dashboard → Auth → Rate Limits (per-IP + per-email caps), and

@@ -1,6 +1,6 @@
 export const meta = {
-  name: 'basecamp-review-fix',
-  description: 'Multi-perspective review of the BASECAMP app, then apply every fix and re-verify',
+  name: 'path-warden-review-fix',
+  description: 'Multi-perspective review of the Path Warden app, then apply every fix and re-verify',
   phases: [
     { title: 'Review', detail: 'parallel reviewers: RLS/security, Next15, types/build, data, design, a11y/PWA' },
     { title: 'Fix', detail: 'apply all findings, partitioned by file (no conflicts)' },
@@ -8,10 +8,10 @@ export const meta = {
   ],
 }
 
-const ROOT = '/Users/timholum/Projects/FitnessApp_Claude'
+const ROOT = '/home/tholum/Projects/fitness-app'
 
 const CTX = `
-You are reviewing BASECAMP, a Next.js 15 (App Router) + TypeScript + Tailwind + Supabase PWA at ${ROOT}.
+You are reviewing Path Warden, a Next.js 15 (App Router) + TypeScript + Tailwind + Supabase PWA at ${ROOT}.
 It is a completion-first MTNTOUGH training tracker with a COOPERATIVE crew layer (shared goals, feed,
 reactions, nudges — NO competitive leaderboard/ranking).
 Orient yourself by reading: PROJECT-PLAN.md, src/app/globals.css, tailwind.config.ts,
@@ -69,7 +69,7 @@ names EXACTLY match supabase/migrations/0001_init.sql; queries are RLS-compatibl
 target real columns; graceful handling of empty results; actions revalidate the right paths; crew/feed/nudge
 logic matches cooperative model. Report findings.` },
   { key: 'design', prompt: `${CTX}
-REVIEW DIMENSION: Design fidelity & UX. Compare each screen (src/app/(app)/*) to the BASECAMP prototype:
+REVIEW DIMENSION: Design fidelity & UX. Compare each screen (src/app/(app)/*) to the Path Warden prototype:
 SUMMIT palette via tokens (no stray hardcoded hex outside SVGs), FORGE layout (hero card, rings, FAB nav,
 badges), condensed Oswald display type, rounded cards, gradient accents. Crew screen must be COOPERATIVE
 (shared goal, "X of N trained today", supportive statuses + nudges) — flag ANY competitive ranking. Phone-width
@@ -109,7 +109,7 @@ const fixes = await parallel(groups.map(([file, fs]) => () => {
     : `Fix this file: ${file} (edit related files only if strictly required to resolve a finding).`
   return agent(`${CTX}
 You are a fix agent. ${target}
-Apply ALL of the following findings. Make minimal, correct edits that preserve the BASECAMP look and the
+Apply ALL of the following findings. Make minimal, correct edits that preserve the Path Warden look and the
 cooperative-crew model. Do not introduce new dependencies. After editing, re-read your changes to confirm
 they are syntactically valid.
 

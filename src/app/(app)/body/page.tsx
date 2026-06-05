@@ -23,7 +23,7 @@ import {
    Loads getBodyToday + the profile (for units), renders the fuel ring,
    macro bars, body-metrics list, and today's fuel + water — with graceful
    empty states. All "+ Log" affordances open client sheets that call the
-   logBody / logMeal / logWater actions. Ported from the BASECAMP
+   logBody / logMeal / logWater actions. Ported from the Path Warden
    prototype's <section id="s-body">.
    ════════════════════════════════════════════════════════════════════ */
 

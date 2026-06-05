@@ -1,11 +1,21 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+// The nonce-based CSP (src/middleware.ts) requires every HTML response to be
+// rendered per-request: Next.js only stamps the request's nonce onto its
+// <script> tags during a dynamic render. Statically prerendered pages ship no
+// nonce, so under 'strict-dynamic' the browser blocks ALL their scripts. The
+// authed (app) routes already render dynamically (their layout reads the nonce
+// via headers()), but the public routes — / and /login — sit under this root
+// layout, so we force dynamic rendering here to cover them and any future
+// public page. Without this, /login loads with every script CSP-blocked.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
-  title: "BASECAMP",
+  title: "Path Warden",
   description: "Train the program. Keep the crew honest.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "BASECAMP" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Path Warden" },
 };
 
 export const viewport: Viewport = {

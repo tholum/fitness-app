@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════
--- BASECAMP — 0003 security hardening
+-- PATH WARDEN — 0003 security hardening
 -- Closes four confirmed RLS / authorization findings. All app behavior and
 -- the cooperative-crew model are preserved; every privileged write that used
 -- to ride a permissive policy now flows through a SECURITY DEFINER function

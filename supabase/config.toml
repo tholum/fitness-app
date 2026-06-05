@@ -149,7 +149,7 @@ enabled = true
 # in emails.
 site_url = "http://127.0.0.1:3000"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = ["https://127.0.0.1:3000", "https://pathwarden.app/auth/callback", "https://pathwarden.app/auth/confirm"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to the local API URL (http://127.0.0.1:<port>/auth/v1).
@@ -222,10 +222,33 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Code-only magic-link / OTP sign-in email. Delivers a 6-digit {{ .Token }} and
+# no clickable link, so mail scanners can't pre-consume the single-use token
+# (the "otp_expired on immediate click" failure). Mirror this template in the
+# hosted dashboard (Auth → Email Templates → Magic Link) for production.
+[auth.email.template.magic_link]
+subject = "Your Path Warden sign-in code"
+content_path = "./supabase/templates/magic_link.html"
+
+# Sign-up confirmation email — verifies a new Path Warden account.
+[auth.email.template.confirmation]
+subject = "Confirm your Path Warden account"
+content_path = "./supabase/templates/confirmation.html"
+
+# Password-recovery email.
+[auth.email.template.recovery]
+subject = "Reset your Path Warden password"
+content_path = "./supabase/templates/recovery.html"
+
+# Email-change confirmation email.
+[auth.email.template.email_change]
+subject = "Confirm your new Path Warden email"
+content_path = "./supabase/templates/email_change.html"
+
+# Crew invite email.
+[auth.email.template.invite]
+subject = "You've been invited to Path Warden"
+content_path = "./supabase/templates/invite.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

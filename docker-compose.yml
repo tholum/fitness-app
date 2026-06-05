@@ -1,5 +1,5 @@
 # ════════════════════════════════════════════════════════════════════
-# BASECAMP — Docker Compose
+# PATH WARDEN — Docker Compose
 #
 #   docker compose up --build      # build the image and run it
 #
@@ -20,8 +20,8 @@ services:
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
-    image: basecamp:latest
-    container_name: basecamp
+    image: path-warden:latest
+    container_name: path-warden
     restart: unless-stopped
     ports:
       - "3000:3000"

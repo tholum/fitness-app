@@ -9,7 +9,7 @@
    page) open the relevant sheet via context — passing an editing payload
    (a meal to edit, or a date to re-log body metrics for). Styling is
    strictly theme-token Tailwind so it re-skins with the active
-   theme/accent, matching the BASECAMP look.
+   theme/accent, matching the Path Warden look.
    ════════════════════════════════════════════════════════════════════ */
 
 import {

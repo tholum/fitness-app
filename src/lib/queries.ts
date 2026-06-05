@@ -1,5 +1,5 @@
 /**
- * BASECAMP — typed, server-side READ helpers.
+ * Path Warden — typed, server-side READ helpers.
  * Each awaits createClient() from "@/lib/supabase/server". All helpers tolerate
  * an empty / unseeded DB by returning null or [] rather than throwing.
  */
