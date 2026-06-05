@@ -269,13 +269,13 @@ function LoginForm() {
         {/* Brand / hero */}
         <div className="mb-8 text-center">
           <div className="font-cond text-[11px] uppercase tracking-[2px] text-muted">
-            Train the program
+            The path is narrow
           </div>
           <h1 className="mt-1 font-display text-5xl font-bold uppercase leading-none tracking-wide text-text">
             Path Warden
           </h1>
           <p className="mt-3 text-sm text-muted">
-            Keep the crew honest.
+            Walk it with intent.
           </p>
         </div>
 
