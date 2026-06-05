@@ -22,3 +22,6 @@ next-env.d.ts
 # supabase local
 supabase/.branches
 supabase/.temp
+
+# private ops runbook (infra details — never commit)
+DEPLOY.local.md
