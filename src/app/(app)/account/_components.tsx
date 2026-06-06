@@ -12,8 +12,9 @@
 
 import { useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Card } from "@/components/ui";
-import { Portal } from "@/components/Portal";
+import { Card, SubmitBtn, ErrorNote } from "@/components/ui";
+import { Sheet } from "@/components/Sheet";
+import { cx } from "@/lib/cx";
 import {
   updateProfile,
   logPR,
@@ -26,10 +27,6 @@ import {
 import { todayISO } from "@/lib/format";
 
 /* ── small local helpers (mirror body/_components.tsx) ────────────────── */
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -44,27 +41,6 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 const inputCls =
   "w-full rounded-[14px] border border-line bg-bg2 px-3.5 py-3 font-display text-base text-text outline-none placeholder:text-faint focus:border-accent";
-
-function SubmitBtn({ pending, children }: { pending: boolean; children: ReactNode }) {
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="mt-1 w-full rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
-    >
-      {pending ? "Saving…" : children}
-    </button>
-  );
-}
-
-function ErrorNote({ message }: { message: string | null }) {
-  if (!message) return null;
-  return (
-    <p className="font-cond text-xs font-semibold uppercase tracking-wide text-danger">
-      {message}
-    </p>
-  );
-}
 
 /** Derive up-to-two initials for the avatar fallback monogram. */
 function initials(name: string): string {
@@ -311,60 +287,6 @@ function fmtDate(iso: string | null | undefined): string {
     day: "numeric",
     year: "numeric",
   });
-}
-
-/* ── Sheet (mirrors body/_components.tsx; scrollable like exercises) ───── */
-function Sheet({
-  open,
-  title,
-  onClose,
-  children,
-}: {
-  open: boolean;
-  title: string;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  if (!open) return null;
-  return (
-    <Portal>
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-    >
-      <button
-        type="button"
-        aria-label="Close"
-        onClick={onClose}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-      />
-      <div className="relative z-10 max-h-[90dvh] w-full max-w-[430px] overflow-y-auto rounded-t-card border border-b-0 border-line-solid bg-surface-solid px-5 pb-[calc(24px+env(safe-area-inset-bottom))] pt-4 shadow-[0_-20px_60px_rgba(0,0,0,.6)]">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-line-solid" />
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold uppercase tracking-[0.04em] text-text">
-            {title}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-surface text-muted"
-            aria-label="Close"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-4 w-4 fill-none stroke-current [stroke-width:2.2]"
-            >
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-    </Portal>
-  );
 }
 
 /* ════════════════════════════════════════════════════════════════════

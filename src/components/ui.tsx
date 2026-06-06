@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, type HTMLAttributes } from "react";
+import { cx } from "@/lib/cx";
 
 /* ════════════════════════════════════════════════════════════════════
    Path Warden UI primitives.
@@ -8,10 +9,6 @@ import { type ReactNode, type HTMLAttributes } from "react";
    strictly via theme-token Tailwind classes (bg-surface, text-text, …)
    so they re-skin automatically with the active theme/accent.
    ════════════════════════════════════════════════════════════════════ */
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
 
 /* ── Card ──────────────────────────────────────────────────────────── */
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
@@ -185,6 +182,43 @@ export function Toggle({
         )}
       />
     </button>
+  );
+}
+
+/* ── SubmitBtn ─────────────────────────────────────────────────────── */
+export interface SubmitBtnProps {
+  /** Disables the button and swaps the label for the pending text. */
+  pending: boolean;
+  children: ReactNode;
+  /** Label shown while pending. Defaults to "Saving…". */
+  pendingLabel?: string;
+}
+
+/** Full-width gradient submit button used by every sheet form. */
+export function SubmitBtn({
+  pending,
+  children,
+  pendingLabel = "Saving…",
+}: SubmitBtnProps) {
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="mt-1 w-full rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
+    >
+      {pending ? pendingLabel : children}
+    </button>
+  );
+}
+
+/* ── ErrorNote ─────────────────────────────────────────────────────── */
+/** Inline uppercase error line; renders nothing when message is null. */
+export function ErrorNote({ message }: { message: string | null }) {
+  if (!message) return null;
+  return (
+    <p className="font-cond text-xs font-semibold uppercase tracking-wide text-danger">
+      {message}
+    </p>
   );
 }
 

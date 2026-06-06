@@ -23,7 +23,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Portal } from "@/components/Portal";
+import { Sheet } from "@/components/Sheet";
+import { cx } from "@/lib/cx";
 import { logTracker, unlogTracker } from "@/lib/actions";
 import { trackerHref, trackerIcon } from "@/lib/trackerNav";
 import { todayISO } from "@/lib/format";
@@ -37,10 +38,6 @@ export interface QuickLogTracker {
   icon: string | null;
   cadenceType: CadenceType;
   unit: string | null;
-}
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
 }
 
 export function QuickLogFab({ trackers }: { trackers: QuickLogTracker[] }) {
@@ -104,40 +101,9 @@ export function QuickLogFab({ trackers }: { trackers: QuickLogTracker[] }) {
         </svg>
       </button>
 
-      {open ? (
-        <Portal>
-          <div
-            className="fixed inset-0 z-50 flex items-end justify-center"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Quick log"
-          >
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={close}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <div className="relative z-10 max-h-[85dvh] w-full max-w-[430px] overflow-y-auto rounded-t-card border border-b-0 border-line-solid bg-surface-solid px-5 pb-[calc(24px+env(safe-area-inset-bottom))] pt-4 shadow-[0_-20px_60px_rgba(0,0,0,.6)]">
-              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-line-solid" />
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-display text-lg font-bold uppercase tracking-[0.04em] text-text">
-                  Quick Log
-                </h2>
-                <button
-                  type="button"
-                  onClick={close}
-                  aria-label="Close"
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-surface text-muted"
-                >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current [stroke-width:2.2]">
-                    <path d="M6 6l12 12M18 6L6 18" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Primary: today's session check-in. */}
-              <Link
+      <Sheet open={open} title="Quick Log" onClose={close} maxHeight="85dvh">
+        {/* Primary: today's session check-in. */}
+        <Link
                 href="/checkin"
                 onClick={close}
                 className="mb-3 flex items-center gap-3 rounded-[16px] bg-grad px-4 py-3.5 text-bg shadow-[0_6px_18px_rgba(200,98,45,.28)]"
@@ -263,10 +229,7 @@ export function QuickLogFab({ trackers }: { trackers: QuickLogTracker[] }) {
                   })}
                 </ul>
               )}
-            </div>
-          </div>
-        </Portal>
-      ) : null}
+      </Sheet>
     </>
   );
 }

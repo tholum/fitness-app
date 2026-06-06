@@ -29,7 +29,9 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Portal } from "@/components/Portal";
+import { Sheet } from "@/components/Sheet";
+import { SubmitBtn, ErrorNote } from "@/components/ui";
+import { cx } from "@/lib/cx";
 import { useHaptics } from "@/components/ThemeProvider";
 import {
   react,
@@ -44,10 +46,6 @@ import {
 } from "@/lib/actions";
 import type { Crew } from "@/lib/types";
 
-function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
-
 /** Parse a form input into a finite number, returning null for blank/invalid. */
 function num(v: FormDataEntryValue | null): number | null {
   if (v === null) return null;
@@ -58,57 +56,6 @@ function num(v: FormDataEntryValue | null): number | null {
 }
 
 /* ── Shared form primitives (mirrors body/_components.tsx) ────────────── */
-
-interface SheetProps {
-  open: boolean;
-  title: string;
-  onClose: () => void;
-  children: ReactNode;
-}
-
-/** Bottom-anchored modal sheet, centered within the phone column. */
-function Sheet({ open, title, onClose, children }: SheetProps) {
-  if (!open) return null;
-  return (
-    <Portal>
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-    >
-      <button
-        type="button"
-        aria-label="Close"
-        onClick={onClose}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-      />
-      <div className="relative z-10 max-h-[90dvh] w-full max-w-[430px] overflow-y-auto rounded-t-card border border-b-0 border-line-solid bg-surface-solid px-5 pb-[calc(24px+env(safe-area-inset-bottom))] pt-4 shadow-[0_-20px_60px_rgba(0,0,0,.6)]">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-line-solid" />
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold uppercase tracking-[0.04em] text-text">
-            {title}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-surface text-muted"
-            aria-label="Close"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-4 w-4 fill-none stroke-current [stroke-width:2.2]"
-            >
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-    </Portal>
-  );
-}
 
 function Field({
   label,
@@ -138,35 +85,6 @@ function Field({
 
 const inputCls =
   "w-full rounded-[14px] border border-line bg-bg2 px-3.5 py-3 font-display text-base text-text outline-none placeholder:text-faint focus:border-accent";
-
-function SubmitBtn({
-  pending,
-  children,
-  pendingLabel = "Saving…",
-}: {
-  pending: boolean;
-  children: ReactNode;
-  pendingLabel?: string;
-}) {
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="mt-1 w-full rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
-    >
-      {pending ? pendingLabel : children}
-    </button>
-  );
-}
-
-function ErrorNote({ message }: { message: string | null }) {
-  if (!message) return null;
-  return (
-    <p className="font-cond text-xs font-semibold uppercase tracking-wide text-danger">
-      {message}
-    </p>
-  );
-}
 
 /* ── Reactions ─────────────────────────────────────────────────────────
    Cooperative reaction chips (👊 🔥 💬). Each chip is a toggle: tapping

@@ -38,7 +38,9 @@ import {
   type CreateTrackerInput,
   type UpdateTrackerInput,
 } from "@/lib/actions";
-import { Portal } from "@/components/Portal";
+import { Sheet } from "@/components/Sheet";
+import { ErrorNote } from "@/components/ui";
+import { cx } from "@/lib/cx";
 import { WeekdayPicker } from "@/components/WeekdayPicker";
 import {
   WeeklyProgress,
@@ -48,10 +50,6 @@ import { todayISO } from "@/lib/format";
 import type { CadenceType, Tracker } from "@/lib/types";
 
 /* ── small local helpers ─────────────────────────────────────────────── */
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
 
 /** Icon palette offered in the sheet (emoji keys persisted to tracker.icon). */
 const ICONS = [
@@ -83,70 +81,6 @@ const CADENCES: ReadonlyArray<{
   { value: "specific_weekdays", title: "Specific Days", sub: "Commit to weekdays" },
   { value: "daily_binary", title: "Every Day", sub: "Did-it daily + streak" },
 ];
-
-/* ── Sheet (portaled bottom-anchored modal) — mirrors /bible · /diet ──── */
-
-function Sheet({
-  open,
-  title,
-  onClose,
-  children,
-}: {
-  open: boolean;
-  title: string;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  if (!open) return null;
-  return (
-    <Portal>
-      <div
-        className="fixed inset-0 z-50 flex items-end justify-center"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-      >
-        <button
-          type="button"
-          aria-label="Close"
-          onClick={onClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        />
-        <div className="relative z-10 max-h-[90dvh] w-full max-w-[430px] overflow-y-auto rounded-t-card border border-b-0 border-line-solid bg-surface-solid px-5 pb-[calc(24px+env(safe-area-inset-bottom))] pt-4 shadow-[0_-20px_60px_rgba(0,0,0,.6)]">
-          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-line-solid" />
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-lg font-bold uppercase tracking-[0.04em] text-text">
-              {title}
-            </h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-surface text-muted"
-              aria-label="Close"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                className="h-4 w-4 fill-none stroke-current [stroke-width:2.2]"
-              >
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            </button>
-          </div>
-          {children}
-        </div>
-      </div>
-    </Portal>
-  );
-}
-
-function ErrorNote({ message }: { message: string | null }) {
-  if (!message) return null;
-  return (
-    <p className="font-cond text-xs font-semibold uppercase tracking-wide text-danger">
-      {message}
-    </p>
-  );
-}
 
 function FieldLabel({ children }: { children: ReactNode }) {
   return (
