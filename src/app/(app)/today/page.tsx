@@ -10,6 +10,7 @@ import {
   getBodyToday,
   getActiveEnrollment,
   resolveTodayDay,
+  getTrainingScheduleToday,
   getNudges,
   getUnseenNudgeCount,
 } from "@/lib/queries";
@@ -72,16 +73,33 @@ export default async function TodayPage() {
   // Resolve everything in parallel. resolveTodayDay walks the active
   // enrollment's current_day_id; getActiveEnrollment gives us the program
   // name/source for the hero eyebrow even before any session is started.
-  const [session, crew, body, enrollment, today, nudges, unseenNudges] =
-    await Promise.all([
-      getTodaySession(profile?.id),
-      getCrewToday(profile?.id),
-      getBodyToday(profile?.id),
-      getActiveEnrollment(profile?.id),
-      resolveTodayDay(profile?.id),
-      getNudges(profile?.id),
-      getUnseenNudgeCount(profile?.id),
-    ]);
+  const [
+    session,
+    crew,
+    body,
+    enrollment,
+    today,
+    schedule,
+    nudges,
+    unseenNudges,
+  ] = await Promise.all([
+    getTodaySession(profile?.id),
+    getCrewToday(profile?.id),
+    getBodyToday(profile?.id),
+    getActiveEnrollment(profile?.id),
+    resolveTodayDay(profile?.id),
+    getTrainingScheduleToday(profile?.id),
+    getNudges(profile?.id),
+    getUnseenNudgeCount(profile?.id),
+  ]);
+
+  // Phase 4: is TODAY a scheduled training day? In 'days' mode a non-scheduled
+  // day is a rest day — it never counts against the streak, so we soften the
+  // hero and tell the user. A completed session today always wins (you can
+  // still train on a rest day; it just isn't required). `sessionDone` is
+  // derived again below for the rings; this read is the same value.
+  const isRestDay =
+    Boolean(schedule?.isRestDay) && !(session?.log.completed ?? false);
 
   // The enrollment supplies the program (name/source for the eyebrow);
   // resolveTodayDay supplies the scheduled day + its ordered blocks.
@@ -218,8 +236,16 @@ export default async function TodayPage() {
                 </svg>
 
                 <div className="relative z-10">
-                  <div className="font-cond text-[11px] font-bold uppercase tracking-[2px] opacity-80">
-                    Today&apos;s Session{eyebrowSource ? ` · ${eyebrowSource}` : ""}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-cond text-[11px] font-bold uppercase tracking-[2px] opacity-80">
+                      Today&apos;s Session{eyebrowSource ? ` · ${eyebrowSource}` : ""}
+                    </div>
+                    {/* Phase 4: scheduled rest day — never counts against streak. */}
+                    {isRestDay ? (
+                      <span className="flex-shrink-0 rounded-full bg-[rgba(28,26,23,.18)] px-2.5 py-1 font-cond text-[10px] font-bold uppercase tracking-wide text-bg">
+                        Rest day
+                      </span>
+                    ) : null}
                   </div>
                   <h2 className="my-1 mt-2 font-display text-2xl font-bold uppercase leading-[1.05] tracking-wide">
                     {sessionTitle}
@@ -228,7 +254,9 @@ export default async function TodayPage() {
                   {hasSession ? (
                     <>
                       <div className="text-[13px] font-semibold opacity-85">
-                        {heroMeta || "Session ready"}
+                        {isRestDay
+                          ? "Scheduled rest day — recover. Missing it won't break your streak."
+                          : heroMeta || "Session ready"}
                       </div>
                       <div className="mt-4 flex gap-2.5">
                         <a
@@ -390,6 +418,27 @@ export default async function TodayPage() {
           Browse Programs
         </Link>
       )}
+
+      {/* ── Schedule affordance ─────────────────────────────────────────────
+          Phase 4: jump to the weekday schedule editor. Shows the current
+          training days (or weekly count) so the user knows today's context. */}
+      {schedule ? (
+        <Link
+          href="/goals"
+          className="relative z-10 mt-2 flex w-full items-center justify-between gap-2 rounded-[16px] border border-line bg-surface px-4 py-3 text-left"
+        >
+          <span className="font-cond text-[11px] font-bold uppercase tracking-[1.5px] text-muted">
+            {schedule.goalType === "count"
+              ? `Schedule · ${schedule.weeklyTarget} / week`
+              : isRestDay
+                ? "Schedule · Rest day today"
+                : "Schedule · Training day today"}
+          </span>
+          <span className="font-display text-sm font-semibold uppercase tracking-wide text-gold">
+            Edit ›
+          </span>
+        </Link>
+      ) : null}
     </>
   );
 }

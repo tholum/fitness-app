@@ -1,17 +1,24 @@
 "use client";
 
 /* ════════════════════════════════════════════════════════════════════
-   TRAINING GOALS — client editor (0009).
+   TRAINING SCHEDULE — client editor (0009 + Phase 4 / 0011).
    A mode toggle (Specific days / Weekly count) plus the matching control:
-     • days  → 7 weekday chips (Mon-first; values are Postgres dow 0=Sun..6=Sat)
+     • days  → the shared WeekdayPicker (Mon-first; Postgres dow 0=Sun..6=Sat)
      • count → a 1–7 sessions/week stepper
    Saving calls the saveTrainingGoal server action, which persists via the
-   SECURITY DEFINER setter and re-derives the streak.
+   SECURITY DEFINER setter, re-derives the streak, AND syncs the singleton
+   exercise tracker (0011) so the dashboard reflects the chosen weekdays.
+
+   Below the editor we show a READ-ONLY weekly-progress preview (this week's
+   completed sessions vs. the schedule) using the shared WeeklyProgress
+   component — the same visual the unified dashboard renders.
    ════════════════════════════════════════════════════════════════════ */
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Card, SectionHeader, Segmented } from "@/components/ui";
+import { WeekdayPicker } from "@/components/WeekdayPicker";
+import { WeeklyProgress, type WeeklyProgressData } from "@/components/WeeklyProgress";
 import type { GoalType } from "@/lib/types";
 
 export interface SaveResult {
@@ -24,17 +31,6 @@ export type SaveGoalFn = (input: {
   target: number;
 }) => Promise<SaveResult>;
 
-/** Mon-first display order; `dow` matches Postgres extract(dow) (0=Sun..6=Sat). */
-const WEEKDAYS: ReadonlyArray<{ dow: number; short: string }> = [
-  { dow: 1, short: "Mon" },
-  { dow: 2, short: "Tue" },
-  { dow: 3, short: "Wed" },
-  { dow: 4, short: "Thu" },
-  { dow: 5, short: "Fri" },
-  { dow: 6, short: "Sat" },
-  { dow: 0, short: "Sun" },
-];
-
 const MODE_OPTIONS = [
   { value: "days", label: "Specific days" },
   { value: "count", label: "Weekly count" },
@@ -45,11 +41,20 @@ export function GoalEditor({
   initialDays,
   initialTarget,
   saveAction,
+  weeklyProgress,
+  programName,
+  streak,
 }: {
   initialType: GoalType;
   initialDays: number[];
   initialTarget: number;
   saveAction: SaveGoalFn;
+  /** This-week exercise progress (from session_logs) for the preview. */
+  weeklyProgress: WeeklyProgressData | null;
+  /** Active program name, shown in the preview header. */
+  programName: string | null;
+  /** Current session streak (days for 'days' mode, weeks for 'count'). */
+  streak: number;
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<GoalType>(initialType);
@@ -60,19 +65,13 @@ export function GoalEditor({
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const toggleDay = (dow: number) => {
-    setMsg(null);
-    setDays((d) =>
-      d.includes(dow) ? d.filter((x) => x !== dow) : [...d, dow],
-    );
-  };
-
   const bumpTarget = (delta: number) => {
     setMsg(null);
     setTarget((t) => Math.min(7, Math.max(1, t + delta)));
   };
 
   const daysInvalid = mode === "days" && days.length === 0;
+  const streakUnit = mode === "count" ? "week" : "day";
 
   function save() {
     if (daysInvalid) {
@@ -86,7 +85,7 @@ export function GoalEditor({
         setMsg({ ok: false, text: res.error ?? "Could not save." });
         return;
       }
-      setMsg({ ok: true, text: "Saved — your streak was updated." });
+      setMsg({ ok: true, text: "Saved — schedule, streak & dashboard updated." });
       router.refresh();
     });
   }
@@ -110,7 +109,7 @@ export function GoalEditor({
         />
       </Card>
 
-      {/* Specific days */}
+      {/* Specific days — shared WeekdayPicker */}
       {mode === "days" ? (
         <Card>
           <SectionHeader>Training days</SectionHeader>
@@ -118,29 +117,14 @@ export function GoalEditor({
             Tap the days you train. A scheduled day you miss breaks the streak;
             the days you leave off are rest days and never do.
           </p>
-          <div className="flex flex-wrap gap-2">
-            {WEEKDAYS.map((d) => {
-              const on = days.includes(d.dow);
-              return (
-                <button
-                  key={d.dow}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => toggleDay(d.dow)}
-                  className={`min-w-[44px] flex-1 rounded-[12px] border px-2 py-3 font-display text-sm font-semibold uppercase tracking-wide transition-colors ${
-                    on
-                      ? "border-transparent bg-grad text-bg"
-                      : "border-line bg-surface text-muted"
-                  }`}
-                >
-                  {d.short}
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-3 font-cond text-[11px] uppercase tracking-wide text-faint">
-            {days.length} day{days.length === 1 ? "" : "s"} / week
-          </p>
+          <WeekdayPicker
+            value={days}
+            onChange={(next) => {
+              setMsg(null);
+              setDays(next);
+            }}
+            footer={`${days.length} day${days.length === 1 ? "" : "s"} / week`}
+          />
         </Card>
       ) : (
         /* Weekly count */
@@ -199,9 +183,31 @@ export function GoalEditor({
           disabled={pending || daysInvalid}
           className="w-full rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
         >
-          {pending ? "Saving…" : "Save goal"}
+          {pending ? "Saving…" : "Save schedule"}
         </button>
       </div>
+
+      {/* This week — read-only exercise progress (the dashboard's own visual) */}
+      {weeklyProgress ? (
+        <Card>
+          <SectionHeader
+            action={
+              <span className="font-cond text-[11px] uppercase tracking-wide text-gold">
+                🔥 {streak} {streakUnit}
+                {streak === 1 ? "" : "s"}
+              </span>
+            }
+          >
+            This week{programName ? ` · ${programName}` : ""}
+          </SectionHeader>
+          <WeeklyProgress data={weeklyProgress} />
+          <p className="mt-3 text-xs leading-relaxed text-muted">
+            Completed sessions this week vs. your schedule. Dots show each day —
+            filled for a trained day, hollow-accent for a scheduled day not yet
+            done.
+          </p>
+        </Card>
+      ) : null}
     </div>
   );
 }

@@ -1226,8 +1226,29 @@ export async function saveTrainingGoal(input: {
   if (error) return { ok: false, error: error.message };
 
   // Streak (in the header), Today, and Progress all read the recomputed stats.
+  // set_my_training_goal() also syncs the singleton exercise tracker (0011), so
+  // the unified dashboard reflects the new schedule too.
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+// ── syncExerciseTracker ──────────────────────────────────────────────────────
+/**
+ * PHASE 4 (0011): ensure the caller's singleton `exercise` tracker exists and is
+ * in lock-step with the profile training goal (cadence / scheduled weekdays /
+ * weekly target / config.programRef). Idempotent. Used to backfill users created
+ * before Phase 4 (saveTrainingGoal already syncs on every edit). RLS-safe: the
+ * SECURITY DEFINER function only ever touches the caller's own rows.
+ */
+export async function syncExerciseTracker(): Promise<ActionResult<{ id: string }>> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { ok: false, error: "Not authenticated" };
+
+  const { data, error } = await supabase.rpc("sync_my_exercise_tracker");
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/goals");
+  return { ok: true, data: { id: data as string } };
 }
 
 // ════════════════════════════════════════════════════════════════════════

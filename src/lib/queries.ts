@@ -7,6 +7,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { todayISO, startOfWeekISO, weekDates, toISODate } from "@/lib/format";
 import type {
+  GoalType,
   Profile,
   SessionLog,
   BlockCompletion,
@@ -643,6 +644,61 @@ export async function resolveTodayDay(userId?: string): Promise<TodayDay | null>
     estMinutes: day.est_minutes,
     videoUrl: day.video_url,
   };
+}
+
+// ── getTrainingScheduleToday ─────────────────────────────────────────────────
+/** Whether today is a scheduled training day, and the streak-relevant context. */
+export interface TrainingScheduleToday {
+  /** Profile goal mode (0009): 'days' = specific weekdays, 'count' = weekly #. */
+  goalType: GoalType;
+  /** Scheduled weekdays as Postgres dow (0=Sun..6=Sat); meaningful for 'days'. */
+  trainingDays: number[];
+  /** Weekly session target; meaningful for 'count'. */
+  weeklyTarget: number;
+  /**
+   * True when today counts as a training day for streak purposes:
+   *   • 'days'  → today's weekday is in trainingDays (a rest day is false).
+   *   • 'count' → always true (any day can count toward the weekly target).
+   */
+  isTrainingDay: boolean;
+  /** True only in 'days' mode when today is NOT a scheduled day (a rest day). */
+  isRestDay: boolean;
+}
+
+/**
+ * Resolve whether TODAY is a scheduled training day, from the profile training
+ * goal (0009 — the canonical schedule that drives the streak). The Today screen
+ * uses this to tell the user "rest day — nothing breaks your streak" vs. a
+ * scheduled session. Mirrors recompute_my_stats() semantics exactly: in 'days'
+ * mode a non-scheduled day is a rest day (never counts against the streak); in
+ * 'count' mode there are no rest days (any day can advance the weekly target).
+ */
+export async function getTrainingScheduleToday(
+  userId?: string,
+): Promise<TrainingScheduleToday | null> {
+  const supabase = await createClient();
+  const uid = userId ?? (await currentUserId());
+  if (!uid) return null;
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("goal_type, training_days, weekly_target")
+    .eq("id", uid)
+    .maybeSingle();
+  if (!data) return null;
+
+  const goalType: GoalType = data.goal_type === "count" ? "count" : "days";
+  // An empty schedule is normalized to "every day" (matches 0009 setter).
+  const raw = Array.isArray(data.training_days) ? (data.training_days as number[]) : [];
+  const trainingDays = raw.length ? raw : [0, 1, 2, 3, 4, 5, 6];
+  const weeklyTarget = typeof data.weekly_target === "number" ? data.weekly_target : 3;
+
+  const todayDow = new Date().getDay();
+  const scheduledToday = trainingDays.includes(todayDow);
+  const isTrainingDay = goalType === "count" ? true : scheduledToday;
+  const isRestDay = goalType === "days" && !scheduledToday;
+
+  return { goalType, trainingDays, weeklyTarget, isTrainingDay, isRestDay };
 }
 
 // ── listExercises ───────────────────────────────────────────────────────────
