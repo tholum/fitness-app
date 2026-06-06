@@ -412,8 +412,11 @@ export function ExerciseList({
         />
       </div>
 
-      {/* Category filter chips */}
-      <div className="no-scrollbar mb-3.5 flex gap-2 overflow-x-auto pb-0.5">
+      {/* Category filter chips — single horizontally-scrollable row.
+         no-scrollbar + overflow-x-auto + flex-nowrap keeps every category on
+         one line and reachable at 390px; px-0.5 gives the first/last chip a
+         little breathing room so they aren't flush-clipped at the edges. */}
+      <div className="no-scrollbar -mx-0.5 mb-3.5 flex flex-nowrap gap-2 overflow-x-auto px-0.5 pb-0.5">
         <FilterChip active={cat === "all"} onClick={() => setCat("all")}>
           All
         </FilterChip>

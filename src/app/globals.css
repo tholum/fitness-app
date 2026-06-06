@@ -126,6 +126,11 @@ html,
 body {
   margin: 0;
   padding: 0;
+  /* Fill the dynamic viewport so the centered column's min-h-[100dvh] always
+     reaches the bottom; on short screens this keeps the fixed nav pinned to the
+     viewport bottom with no gap below it. No fixed height / overflow:hidden so
+     the inner <main> stays the intended scroller. */
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-body), system-ui, sans-serif;

@@ -103,7 +103,13 @@ export default async function AppLayout({
         <main
           id="main"
           tabIndex={-1}
-          className="no-scrollbar relative z-10 flex-1 overflow-y-auto px-[18px] pb-[100px] pt-2 outline-none"
+          className="no-scrollbar relative z-10 flex-1 overflow-y-auto overscroll-contain px-[18px] pt-2 outline-none"
+          // Clear the fixed BottomNav on EVERY device: nav is 84px tall plus the
+          // home-indicator safe area (env(safe-area-inset-bottom)) on notched
+          // iPhones, plus a 16px gap so content never hides behind the bar.
+          style={{
+            paddingBottom: "calc(84px + env(safe-area-inset-bottom) + 16px)",
+          }}
         >
           <ConfirmProvider>{children}</ConfirmProvider>
 
