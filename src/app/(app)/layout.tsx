@@ -1,7 +1,9 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getTrackers } from "@/lib/queries";
 import { BottomNav } from "@/components/BottomNav";
+import type { QuickLogTracker } from "@/components/QuickLogFab";
 import { ConfirmProvider } from "@/components/Confirm";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import {
@@ -43,6 +45,19 @@ export default async function AppLayout({
   const appearance = profile
     ? normalizeAppearance(profile.appearance)
     : DEFAULT_APPEARANCE;
+
+  // The center FAB is a quick-log launcher: it lists the user's active trackers
+  // so any goal can be logged from anywhere. Slimmed to the fields the sheet
+  // needs (so we don't ship the whole row to the client).
+  const trackerRows = await getTrackers(user.id);
+  const quickLogTrackers: QuickLogTracker[] = trackerRows.map((t) => ({
+    id: t.id,
+    title: t.title,
+    type: t.type,
+    icon: t.icon,
+    cadenceType: t.cadence_type,
+    unit: t.unit,
+  }));
 
   return (
     <ThemeProvider userId={user.id} initial={appearance}>
@@ -114,7 +129,7 @@ export default async function AppLayout({
             sits at the bottom of the dynamic viewport — always visible and
             tracking the mobile URL bar. It is in normal flow (not fixed), so
             overlays must portal to <body> to paint above it (see Portal.tsx). */}
-        <BottomNav />
+        <BottomNav quickLogTrackers={quickLogTrackers} />
       </div>
     </ThemeProvider>
   );

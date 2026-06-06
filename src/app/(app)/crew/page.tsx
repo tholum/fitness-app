@@ -3,9 +3,11 @@ import {
   getProfile,
   getCrewToday,
   getFeed,
+  getCrewGoals,
   listMyCrews,
   type FeedItem,
 } from "@/lib/queries";
+import { trackerIcon } from "@/lib/trackerNav";
 import { startOfWeekISO, todayISO } from "@/lib/format";
 import { Card, SectionHeader } from "@/components/ui";
 import {
@@ -76,6 +78,7 @@ const FEED_KIND_LABEL: Record<string, { icon: string; verb: string }> = {
   session: { icon: "✓", verb: "completed a session" },
   pr: { icon: "🏆", verb: "hit a PR" },
   badge: { icon: "🎖️", verb: "earned a badge" },
+  goal: { icon: "🎯", verb: "logged a goal" },
   note: { icon: "📝", verb: "posted" },
 };
 
@@ -203,10 +206,14 @@ export default async function CrewPage() {
   }
 
   const memberIds = members.map((m) => m.user_id);
-  const [{ byUser, crewTotal }, feed] = await Promise.all([
+  const [{ byUser, crewTotal }, feed, crewGoals] = await Promise.all([
     getCrewWeek(memberIds),
     getFeed(crew.id),
+    getCrewGoals(memberIds),
   ]);
+
+  // Member display-name lookup for the crew goals surface.
+  const nameById = new Map(members.map((m) => [m.user_id, m.display_name]));
 
   const meId = profile?.id ?? null;
   const isOwner = meId != null && crew.created_by === meId;
@@ -375,6 +382,62 @@ export default async function CrewPage() {
           );
         })}
       </Card>
+
+      {/* ── Crew goals this week (all goals are crew-shared) ──────────── */}
+      {crewGoals.total > 0 ? (
+        <>
+          <SectionHeader>
+            Goals This Week · {crewGoals.metCount}/{crewGoals.total} hit
+          </SectionHeader>
+          <Card className="mb-1">
+            {orderedMembers
+              .map((m) => ({ member: m, goals: crewGoals.byUser.get(m.user_id) ?? [] }))
+              .filter(({ goals }) => goals.length > 0)
+              .map(({ member, goals }, idx, arr) => {
+                const isMe = member.user_id === meId;
+                return (
+                  <div
+                    key={member.user_id}
+                    className={`px-3.5 py-3 ${idx < arr.length - 1 ? "border-b border-line" : ""}`}
+                  >
+                    <div className="mb-2 flex items-center gap-2.5">
+                      <Avatar name={member.display_name} userId={member.user_id} size={28} />
+                      <span className="font-display text-[13px] font-semibold uppercase tracking-wide text-text">
+                        {isMe ? "You" : nameById.get(member.user_id) ?? member.display_name}
+                      </span>
+                      <span className="ml-auto font-cond text-[10px] uppercase tracking-wide text-faint">
+                        {goals.filter((g) => g.met).length}/{goals.length} this week
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {goals.map((g) => (
+                        <span
+                          key={g.trackerId}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-cond text-[11px] font-semibold uppercase tracking-wide ${
+                            g.met
+                              ? "border-transparent bg-grad text-bg"
+                              : "border-line bg-surface2 text-muted"
+                          }`}
+                          title={`${g.title}: ${Math.round(g.done)}${
+                            g.target > 0 ? ` / ${Math.round(g.target)}` : ""
+                          }${g.unit ? ` ${g.unit}` : ""}`}
+                        >
+                          <span aria-hidden>{trackerIcon(g.type, g.icon)}</span>
+                          {g.title}
+                          {g.met ? (
+                            <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-current [stroke-width:3]">
+                              <path d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : null}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+          </Card>
+        </>
+      ) : null}
 
       {/* ── Invite affordance (exposes invite_code) ──────────────────── */}
       <div className="mt-3.5">

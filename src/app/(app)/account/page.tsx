@@ -24,7 +24,7 @@ interface QuickLink {
 
 const QUICK_LINKS: QuickLink[] = [
   {
-    href: "/goals",
+    href: "/goals/training",
     label: "Training Goals",
     sub: "Your weekly schedule & streak rule",
     icon: (
@@ -53,6 +53,16 @@ const QUICK_LINKS: QuickLink[] = [
       <svg viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="9" />
         <path d="M12 7v5l3 2" />
+      </svg>
+    ),
+  },
+  {
+    href: "/body",
+    label: "Body & Nutrition",
+    sub: "Weight, water & today's food",
+    icon: (
+      <svg viewBox="0 0 24 24">
+        <path d="M3 12c4 0 4-6 9-6s5 6 9 6-4 6-9 6-5-6-9-6z" />
       </svg>
     ),
   },

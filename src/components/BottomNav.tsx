@@ -3,18 +3,26 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { QuickLogFab, type QuickLogTracker } from "@/components/QuickLogFab";
 
 /* ════════════════════════════════════════════════════════════════════
    BOTTOM NAV
-   In-flow, blurred bar with the center [FAB Check-In] flanked by primary
-   destinations: Today · Crew · [FAB] · Body · Progress · Account.
-   This mirrors the Path Warden prototype's airy 4+FAB rhythm (Today · Crew
-   · [FAB] · Body · Progress) and keeps Account as the one extra tab: it
-   is the only entry to profile + sign-out and doubles as the management
-   hub, surfacing Programs / Exercises / Appearance as quick links (so
-   plan authoring stays reachable without its own persistent tab — gaps
-   1,26,32). Active route highlights in the accent color.
-   Ported from the Path Warden prototype's <nav class="nav">.
+   In-flow, blurred bar with the center [FAB quick-log] flanked by the
+   primary destinations:  Today · Crew · [FAB] · Goals · Progress · Account.
+
+   Phase 6 IA (5 tabs + a universal-log FAB):
+     • Today    — the unified weekly dashboard (every goal at a glance) +
+                  the active session hero.
+     • Crew     — cooperative crew feed + crew goal progress.
+     • [FAB]    — QuickLogFab: a launcher to Check In or log ANY goal today
+                  (reaches every tracker without crowding the bar).
+     • Goals    — the hub linking the four first-class areas (Training /
+                  Nutrition / Bible / Custom) and listing every active goal.
+     • Progress — gamified stats / PRs / badges.
+     • Account  — profile, sign-out, and the management hub (Body &
+                  Nutrition / Programs / Exercises / Appearance as quick
+                  links, so secondary screens stay reachable).
+   Active route highlights in the accent color.
    ════════════════════════════════════════════════════════════════════ */
 
 interface NavItem {
@@ -54,11 +62,13 @@ const LEFT_ITEMS: NavItem[] = [
 /** Destinations right of the center FAB. */
 const RIGHT_ITEMS: NavItem[] = [
   {
-    href: "/body",
-    label: "Body",
+    href: "/goals",
+    label: "Goals",
     icon: (
       <svg viewBox="0 0 24 24">
-        <path d="M3 12c4 0 4-6 9-6s5 6 9 6-4 6-9 6-5-6-9-6z" />
+        <circle cx="12" cy="12" r="8" />
+        <circle cx="12" cy="12" r="3.4" />
+        <path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22" />
       </svg>
     ),
   },
@@ -103,7 +113,12 @@ function NavButton({ item, pathname }: { item: NavItem; pathname: string }) {
   );
 }
 
-export function BottomNav() {
+export function BottomNav({
+  quickLogTrackers = [],
+}: {
+  /** Active trackers fed to the center quick-log FAB (from the app layout). */
+  quickLogTrackers?: QuickLogTracker[];
+}) {
   const pathname = usePathname();
 
   return (
@@ -115,18 +130,7 @@ export function BottomNav() {
         <NavButton key={item.href} item={item} pathname={pathname} />
       ))}
 
-      <Link
-        href="/checkin"
-        aria-label="Check In"
-        className="mx-1.5 -mt-5 flex h-[58px] w-[58px] flex-shrink-0 items-center justify-center rounded-full bg-grad shadow-[0_8px_22px_rgba(200,98,45,.5)]"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          className="h-[26px] w-[26px] fill-none stroke-bg [stroke-width:2.6]"
-        >
-          <path d="M5 13l4 4L19 7" />
-        </svg>
-      </Link>
+      <QuickLogFab trackers={quickLogTrackers} />
 
       {RIGHT_ITEMS.map((item) => (
         <NavButton key={item.href} item={item} pathname={pathname} />

@@ -9,7 +9,7 @@
    trackers.scheduled_weekdays and profiles.training_days (0009).
 
    Reuses the visual language of the training-goal day picker
-   (src/app/(app)/goals/_components.tsx): active chip = bg-grad text-bg,
+   (src/app/(app)/goals/training/_components.tsx): active chip = bg-grad text-bg,
    inactive = border-line bg-surface text-muted, uppercase display type.
    ════════════════════════════════════════════════════════════════════ */
 

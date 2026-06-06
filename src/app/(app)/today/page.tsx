@@ -13,8 +13,12 @@ import {
   getTrainingScheduleToday,
   getNudges,
   getUnseenNudgeCount,
+  getTrackersWithProgress,
+  getTrackerStreak,
 } from "@/lib/queries";
 import { validateVideoUrl } from "@/lib/format";
+import { WeeklyProgress, type WeeklyProgressData } from "@/components/WeeklyProgress";
+import { TYPE_LABEL, trackerHref, trackerIcon } from "@/lib/trackerNav";
 import { NudgeInbox } from "../checkin/_components";
 
 /* ════════════════════════════════════════════════════════════════════
@@ -82,6 +86,7 @@ export default async function TodayPage() {
     schedule,
     nudges,
     unseenNudges,
+    trackers,
   ] = await Promise.all([
     getTodaySession(profile?.id),
     getCrewToday(profile?.id),
@@ -91,7 +96,20 @@ export default async function TodayPage() {
     getTrainingScheduleToday(profile?.id),
     getNudges(profile?.id),
     getUnseenNudgeCount(profile?.id),
+    getTrackersWithProgress(profile?.id),
   ]);
+
+  // Unified dashboard: every active goal with this week's progress, deep-linking
+  // into its dedicated screen. Streaks resolved for streak-bearing cadences.
+  const goalRows = await Promise.all(
+    trackers.map(async ({ tracker, progress }) => ({
+      tracker,
+      progress: {
+        ...progress,
+        streak: await getTrackerStreak(tracker),
+      } satisfies WeeklyProgressData,
+    })),
+  );
 
   // Phase 4: is TODAY a scheduled training day? In 'days' mode a non-scheduled
   // day is a rest day — it never counts against the streak, so we soften the
@@ -396,6 +414,57 @@ export default async function TodayPage() {
         }
       })}
 
+      {/* ── Unified goals dashboard ───────────────────────────────────────
+          Every active goal (exercise · diet · bible · custom) with this
+          week's WeeklyProgress at a glance, each deep-linking into its
+          dedicated screen (IA = both). Empty state nudges to the Goals hub. */}
+      <SectionHeader action={<Link href="/goals">All goals →</Link>}>
+        This Week&apos;s Goals
+      </SectionHeader>
+      {goalRows.length === 0 ? (
+        <Link href="/goals" className="block">
+          <Card className="mb-2.5 flex items-center gap-3 p-3.5">
+            <div className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-line bg-surface2 text-base">
+              🎯
+            </div>
+            <div className="flex-1 text-[13px] text-muted">
+              No goals yet —{" "}
+              <span className="text-text">set training, macros, reading, or a custom habit</span>.
+            </div>
+            <span className="font-display text-gold">›</span>
+          </Card>
+        </Link>
+      ) : (
+        <div className="mb-1 space-y-2.5">
+          {goalRows.map(({ tracker, progress }) => (
+            <Link key={tracker.id} href={trackerHref(tracker.type)} className="block">
+              <Card className="p-3.5">
+                <div className="mb-2.5 flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[11px] border border-line bg-surface2 text-base">
+                    {trackerIcon(tracker.type, tracker.icon)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-display text-[13px] font-bold uppercase tracking-[0.03em] text-text">
+                      {tracker.title}
+                    </div>
+                    <div className="font-cond text-[10px] uppercase tracking-wide text-faint">
+                      {TYPE_LABEL[tracker.type]}
+                      {progress.streak > 0 ? (
+                        <span className="ml-2 text-gold">🔥 {progress.streak}</span>
+                      ) : null}
+                    </div>
+                  </div>
+                  <span className="font-display text-gold" aria-hidden>
+                    ›
+                  </span>
+                </div>
+                <WeeklyProgress data={progress} ringSize={44} />
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
+
       {/* ── Primary CTA ─────────────────────────────────────────────────── */}
       {hasSession ? (
         <Link
@@ -424,7 +493,7 @@ export default async function TodayPage() {
           training days (or weekly count) so the user knows today's context. */}
       {schedule ? (
         <Link
-          href="/goals"
+          href="/goals/training"
           className="relative z-10 mt-2 flex w-full items-center justify-between gap-2 rounded-[16px] border border-line bg-surface px-4 py-3 text-left"
         >
           <span className="font-cond text-[11px] font-bold uppercase tracking-[1.5px] text-muted">

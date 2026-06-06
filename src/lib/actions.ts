@@ -1247,7 +1247,7 @@ export async function syncExerciseTracker(): Promise<ActionResult<{ id: string }
   const { data, error } = await supabase.rpc("sync_my_exercise_tracker");
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/goals");
+  revalidatePath("/goals/training");
   return { ok: true, data: { id: data as string } };
 }
 
@@ -1482,11 +1482,12 @@ export async function logTracker(input: LogTrackerInput): Promise<ActionResult> 
     if (noteErr) return noteErr;
   }
 
+  const logDate = input.date ?? todayISO();
   const { error } = await supabase.from("tracker_logs").upsert(
     {
       tracker_id: input.trackerId,
       user_id: user.id, // normalized to the tracker owner by the DB trigger
-      date: input.date ?? todayISO(),
+      date: logDate,
       value: input.value ?? 1,
       note,
     },
@@ -1494,8 +1495,82 @@ export async function logTracker(input: LogTrackerInput): Promise<ActionResult> 
   );
   if (error) return { ok: false, error: error.message };
 
+  // ── Social surfacing (Phase 6) ─────────────────────────────────────────
+  // Logging a SHARED goal posts a 'goal' card to the user's active crew feed,
+  // reusing the existing feed_posts/reactions model (kind widened in 0012).
+  // Idempotent per (tracker, day): re-logging the same day updates the body of
+  // the existing post rather than spamming the feed. Best-effort — a feed
+  // failure must never fail the log itself.
+  await surfaceGoalToFeed(supabase, user.id, input.trackerId, logDate);
+
   revalidatePath("/goals");
+  revalidatePath("/today");
+  revalidatePath("/crew");
   return { ok: true };
+}
+
+/**
+ * Post (or refresh) a crew-feed card for a tracker logged on `date`. No-ops
+ * when the tracker isn't shared, the user has no active crew, or anything
+ * fails — goal logging is the source of truth and must not be blocked by the
+ * social side-effect. One post per (tracker, day): keyed by ref_id + a body
+ * tag, so re-logging the same day doesn't duplicate the card.
+ */
+async function surfaceGoalToFeed(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  trackerId: string,
+  date: string,
+): Promise<void> {
+  try {
+    const { data: tracker } = await supabase
+      .from("trackers")
+      .select("id, title, shared, type, user_id")
+      .eq("id", trackerId)
+      .maybeSingle();
+    const t = tracker as
+      | { id: string; title: string; shared: boolean; type: string; user_id: string }
+      | null;
+    // Only the owner posts, and only for shared goals.
+    if (!t || t.user_id !== userId || !t.shared) return;
+
+    const crewId = await resolveActiveCrewId(supabase, userId);
+    if (!crewId) return;
+
+    const body = t.title?.slice(0, LIMITS.noteBody) || "a goal";
+
+    // De-dupe: one 'goal' post per (user, tracker, day). ref_id holds the
+    // tracker id; we additionally match the day so distinct days each surface.
+    const dayStart = `${date}T00:00:00`;
+    const dayEnd = `${date}T23:59:59.999`;
+    const { data: existing } = await supabase
+      .from("feed_posts")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("kind", "goal")
+      .eq("ref_id", trackerId)
+      .gte("created_at", dayStart)
+      .lte("created_at", dayEnd)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from("feed_posts")
+        .update({ body })
+        .eq("id", (existing as { id: string }).id);
+      return;
+    }
+
+    await supabase.from("feed_posts").insert({
+      user_id: userId,
+      crew_id: crewId,
+      kind: "goal",
+      ref_id: trackerId,
+      body,
+    });
+  } catch {
+    // Best-effort: swallow — the log already succeeded.
+  }
 }
 
 // ── unlogTracker ───────────────────────────────────────────────────────────
@@ -1507,14 +1582,30 @@ export async function unlogTracker(
   const { supabase, user } = await requireUser();
   if (!user) return { ok: false, error: "Not authenticated" };
 
+  const logDate = date ?? todayISO();
   const { error } = await supabase
     .from("tracker_logs")
     .delete()
     .eq("tracker_id", trackerId)
-    .eq("date", date ?? todayISO())
+    .eq("date", logDate)
     .eq("user_id", user.id);
   if (error) return { ok: false, error: error.message };
 
+  // Social: drop the day's crew-feed card for this goal (idempotent — a no-op
+  // when none exists). feed_delete RLS scopes this to the author. Best-effort.
+  const dayStart = `${logDate}T00:00:00`;
+  const dayEnd = `${logDate}T23:59:59.999`;
+  await supabase
+    .from("feed_posts")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("kind", "goal")
+    .eq("ref_id", trackerId)
+    .gte("created_at", dayStart)
+    .lte("created_at", dayEnd);
+
   revalidatePath("/goals");
+  revalidatePath("/today");
+  revalidatePath("/crew");
   return { ok: true };
 }

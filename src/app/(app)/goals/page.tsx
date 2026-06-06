@@ -1,102 +1,177 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  getProfile,
-  getActiveEnrollment,
-  getWeeklyProgress,
-} from "@/lib/queries";
-import { saveTrainingGoal, syncExerciseTracker } from "@/lib/actions";
-import { GoalEditor } from "./_components";
-import type { GoalType, Tracker } from "@/lib/types";
-import type { WeeklyProgressData } from "@/components/WeeklyProgress";
+import { Card, SectionHeader } from "@/components/ui";
+import { WeeklyProgress, type WeeklyProgressData } from "@/components/WeeklyProgress";
 import { createClient } from "@/lib/supabase/server";
+import { getTrackersWithProgress, getTrackerStreak } from "@/lib/queries";
+import { TYPE_LABEL, trackerHref, trackerIcon } from "@/lib/trackerNav";
+import type { Tracker, TrackerType } from "@/lib/types";
 
 /* ════════════════════════════════════════════════════════════════════
-   TRAINING GOALS / EXERCISE SCHEDULE (/goals) — 0009 + Phase 4 (0011).
+   GOALS HUB (/goals) — Phase 6.
 
-   Sets the per-user training goal that drives the streak so rest days don't
-   break it, AND — the Phase 4 addition — lets the user choose WHICH weekdays
-   their training sessions land on:
-     • "days"  → specific weekdays (e.g. Mon/Wed/Fri). Rest days are skipped;
-                 a scheduled day you miss breaks the streak.
-     • "count" → a flexible weekly target (N sessions/week, any days). Streak
-                 counts consecutive weeks that hit the target.
+   The single entry point for every goal area. The four FIRST-CLASS areas
+   (Training, Nutrition, Bible, Custom) each get a tile that deep-links into
+   its dedicated screen (Phases 2–5). Below, the user's ACTIVE goals are
+   listed with the shared <WeeklyProgress> at a glance, each deep-linking to
+   the right screen. The unified weekly dashboard lives on Today; this hub is
+   the navigational home (IA = both: dashboard + dedicated screens).
 
-   The schedule is stored ONCE on the profile (training_days / goal_type /
-   weekly_target — the canonical source that recompute_my_stats() reads). The
-   set_my_training_goal() RPC mirrors it into the singleton `exercise` tracker
-   (0011) so the unified dashboard shows exercise weekly progress.
-
-   Server component: backfills/syncs the exercise tracker on load (idempotent),
-   reads the current goal + this-week exercise progress, and hands them to the
-   client editor (which calls the saveTrainingGoal server action).
+   Server component: loads every tracker with this-week progress in one call
+   (getTrackersWithProgress), then groups by type for the area tiles.
    ════════════════════════════════════════════════════════════════════ */
 
 export const dynamic = "force-dynamic";
 
-export default async function GoalsPage() {
-  const profile = await getProfile();
-  if (!profile) redirect("/login");
+const AREAS: ReadonlyArray<{
+  type: TrackerType;
+  title: string;
+  sub: string;
+}> = [
+  { type: "exercise", title: "Training", sub: "Weekly schedule & streak" },
+  { type: "diet", title: "Nutrition", sub: "Macros & adherence" },
+  { type: "bible", title: "Bible Reading", sub: "Daily reading & streak" },
+  { type: "custom", title: "Custom Trackers", sub: "Any habit, any cadence" },
+];
 
-  // Backfill: ensure the singleton exercise tracker exists and matches the
-  // current schedule (no-op for users created after Phase 4). Idempotent.
-  await syncExerciseTracker();
-
-  const type: GoalType = profile.goal_type === "count" ? "count" : "days";
-  const days = Array.isArray(profile.training_days)
-    ? profile.training_days
-    : [1, 3, 5];
-  const target = profile.weekly_target ?? 3;
-
-  // This-week exercise progress (from session_logs) + active program name, for
-  // the read-only preview under the editor.
+export default async function GoalsHubPage() {
   const supabase = await createClient();
-  const { data: exerciseRow } = await supabase
-    .from("trackers")
-    .select("*")
-    .eq("user_id", profile.id)
-    .eq("type", "exercise")
-    .eq("archived", false)
-    .maybeSingle();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
-  const [progress, enrollment] = await Promise.all([
-    exerciseRow
-      ? getWeeklyProgress(exerciseRow as Tracker, profile.id)
-      : Promise.resolve(null),
-    getActiveEnrollment(profile.id),
-  ]);
+  const all = await getTrackersWithProgress(user.id);
 
-  const progressData: WeeklyProgressData | null = progress
-    ? {
-        done: progress.done,
-        target: progress.target,
-        unit: progress.unit,
-        perDay: progress.perDay,
-        streak: progress.streak,
-        scheduledWeekdays: progress.scheduledWeekdays,
-      }
-    : null;
+  // Streaks for streak-bearing cadences (daily_binary / specific_weekdays).
+  const withStreak = await Promise.all(
+    all.map(async ({ tracker, progress }) => ({
+      tracker,
+      progress: {
+        ...progress,
+        streak: await getTrackerStreak(tracker),
+      } satisfies WeeklyProgressData,
+    })),
+  );
+
+  const byType = new Map<TrackerType, typeof withStreak>();
+  for (const row of withStreak) {
+    const list = byType.get(row.tracker.type) ?? [];
+    list.push(row);
+    byType.set(row.tracker.type, list);
+  }
 
   return (
     <>
-      {/* Header — mirrors the prototype .hd pattern used across screens. */}
+      {/* Header */}
       <header className="relative z-10 px-0.5 pb-[18px] pt-2">
         <div className="font-cond text-[11px] uppercase tracking-[0.18em] text-muted">
-          Train your way
+          Everything you&apos;re tracking
         </div>
         <h1 className="mt-[3px] font-display text-[30px] font-bold uppercase leading-none tracking-[0.03em] text-text">
-          Training Schedule
+          Goals
         </h1>
       </header>
 
-      <GoalEditor
-        initialType={type}
-        initialDays={days}
-        initialTarget={target}
-        saveAction={saveTrainingGoal}
-        weeklyProgress={progressData}
-        programName={enrollment?.program?.name ?? null}
-        streak={profile.streak_count ?? 0}
-      />
+      {/* ── Area tiles — the four first-class destinations ── */}
+      <SectionHeader>Areas</SectionHeader>
+      <div className="mb-4 grid grid-cols-2 gap-2.5">
+        {AREAS.map((area) => {
+          const count = byType.get(area.type)?.length ?? 0;
+          return (
+            <Link
+              key={area.type}
+              href={trackerHref(area.type)}
+              className="rounded-card border border-line bg-surface p-4 backdrop-blur-md"
+            >
+              <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-[13px] border border-line bg-surface2 text-xl">
+                {trackerIcon(area.type, null)}
+              </div>
+              <div className="font-display text-[14px] font-bold uppercase tracking-[0.03em] text-text">
+                {area.title}
+              </div>
+              <div className="mt-0.5 font-cond text-[10px] uppercase tracking-wide text-faint">
+                {count > 0
+                  ? `${count} active`
+                  : area.type === "custom"
+                    ? "Add a habit"
+                    : "Set it up"}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* ── This week — every active goal at a glance ── */}
+      <SectionHeader>This Week</SectionHeader>
+      {withStreak.length === 0 ? (
+        <Card className="p-6 text-center">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-[18px] border border-line bg-surface2 text-2xl">
+            🎯
+          </div>
+          <h2 className="font-display text-xl font-bold uppercase tracking-[0.03em] text-text">
+            No goals yet
+          </h2>
+          <p className="mx-auto mt-2 max-w-[280px] text-[13px] text-muted">
+            Pick an area above to get started — set a training schedule, macro
+            targets, a reading habit, or build a custom tracker.
+          </p>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {withStreak.map(({ tracker, progress }) => (
+            <GoalRow key={tracker.id} tracker={tracker} progress={progress} />
+          ))}
+        </div>
+      )}
+
+      {/* Coherence: the unified weekly dashboard lives on Today. */}
+      <Link
+        href="/today"
+        className="mt-4 flex items-center justify-center gap-2 rounded-[16px] border border-line bg-surface px-4 py-3 font-cond text-[11px] font-semibold uppercase tracking-wide text-muted"
+      >
+        Weekly dashboard on Today
+        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-current [stroke-width:2.4]">
+          <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+      </Link>
     </>
+  );
+}
+
+/** A single goal row: icon + title + cadence type, the shared WeeklyProgress,
+ *  deep-linking into the tracker's dedicated screen. */
+function GoalRow({
+  tracker,
+  progress,
+}: {
+  tracker: Tracker;
+  progress: WeeklyProgressData;
+}) {
+  return (
+    <Link href={trackerHref(tracker.type)} className="block">
+      <Card className="p-4">
+        <div className="mb-3 flex items-center gap-3">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[12px] border border-line bg-surface2 text-lg">
+            {trackerIcon(tracker.type, tracker.icon)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-display text-[14px] font-bold uppercase tracking-[0.03em] text-text">
+              {tracker.title}
+            </div>
+            <div className="font-cond text-[10px] uppercase tracking-wide text-faint">
+              {TYPE_LABEL[tracker.type]}
+              {progress.streak > 0 ? (
+                <span className="ml-2 text-gold">🔥 {progress.streak}</span>
+              ) : null}
+            </div>
+          </div>
+          <span className="font-display text-gold" aria-hidden>
+            ›
+          </span>
+        </div>
+        <WeeklyProgress data={progress} ringSize={48} />
+      </Card>
+    </Link>
   );
 }

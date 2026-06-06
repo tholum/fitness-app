@@ -29,6 +29,7 @@ import type {
   Exercise,
   Nudge,
   Tracker,
+  TrackerType,
   TrackerLog,
 } from "@/lib/types";
 
@@ -1139,6 +1140,97 @@ export async function getTrackerStreak(tracker: Tracker): Promise<number> {
     cursor.setDate(cursor.getDate() - 1);
   }
   return streak;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// CREW GOALS (Phase 6 — social surfacing)
+// ════════════════════════════════════════════════════════════════════════
+
+/** One crew member's shared goal, with this-week progress, for the Crew screen. */
+export interface CrewGoal {
+  userId: string;
+  trackerId: string;
+  title: string;
+  icon: string | null;
+  type: TrackerType;
+  done: number;
+  target: number;
+  unit: string | null;
+  /** True when this week's target is met (or any progress when no target). */
+  met: boolean;
+}
+
+/** Crew goals grouped by member id (only members with ≥1 shared goal appear). */
+export interface CrewGoals {
+  byUser: Map<string, CrewGoal[]>;
+  /** Total shared goals across the crew this week. */
+  total: number;
+  /** How many of those goals have hit their weekly target. */
+  metCount: number;
+}
+
+/**
+ * Read every crew member's SHARED goals plus this week's progress, for the
+ * crew screen's "Goals this week" surface. Reuses the foundation's
+ * getWeeklyProgress per tracker so the math matches the dashboard exactly.
+ *
+ * RLS does the access control: trackers_select / tracker_logs_select already
+ * expose a crew-mate's rows when the tracker is shared AND shares_crew() holds,
+ * so a plain query over the member ids returns only what the viewer may see.
+ * Tolerates an empty crew / unseeded DB (returns an empty grouping).
+ */
+export async function getCrewGoals(memberIds: string[]): Promise<CrewGoals> {
+  const byUser = new Map<string, CrewGoal[]>();
+  const empty: CrewGoals = { byUser, total: 0, metCount: 0 };
+  if (!memberIds.length) return empty;
+
+  const supabase = await createClient();
+
+  // Shared, active trackers for all members (RLS filters to the viewer-visible
+  // subset). Ordered for a stable, friendly read.
+  const { data: rows } = await supabase
+    .from("trackers")
+    .select("*")
+    .in("user_id", memberIds)
+    .eq("archived", false)
+    .eq("shared", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  const trackers = (rows ?? []) as Tracker[];
+  if (!trackers.length) return empty;
+
+  // Compute this-week progress per tracker (same helper the dashboard uses).
+  // Pass each tracker's owner so the right per-type source is queried.
+  const goals = await Promise.all(
+    trackers.map(async (t) => {
+      const p = await getWeeklyProgress(t, t.user_id);
+      const met = p.target > 0 ? p.done >= p.target : p.done > 0;
+      return {
+        userId: t.user_id,
+        trackerId: t.id,
+        title: t.title,
+        icon: t.icon ?? null,
+        type: t.type,
+        done: p.done,
+        target: p.target,
+        unit: p.unit,
+        met,
+      } satisfies CrewGoal;
+    }),
+  );
+
+  let total = 0;
+  let metCount = 0;
+  for (const g of goals) {
+    const list = byUser.get(g.userId) ?? [];
+    list.push(g);
+    byUser.set(g.userId, list);
+    total += 1;
+    if (g.met) metCount += 1;
+  }
+
+  return { byUser, total, metCount };
 }
 
 // Re-export so screens can pull the tracker_logs row type alongside helpers.
