@@ -46,6 +46,17 @@ const QUICK_LINKS: QuickLink[] = [
     ),
   },
   {
+    href: "/trackers",
+    label: "My Trackers",
+    sub: "Custom habits, counts & streaks",
+    icon: (
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    ),
+  },
+  {
     href: "/programs",
     label: "Programs",
     sub: "Build & manage training plans",
