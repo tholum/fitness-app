@@ -24,6 +24,7 @@ import {
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui";
+import { Portal } from "@/components/Portal";
 import { useConfirm } from "@/components/Confirm";
 
 /* ── shared shapes (kept local so the file is self-contained) ─────────── */
@@ -83,6 +84,7 @@ function Sheet({
 }) {
   if (!open) return null;
   return (
+    <Portal>
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
       role="dialog"
@@ -118,6 +120,7 @@ function Sheet({
         {children}
       </div>
     </div>
+    </Portal>
   );
 }
 

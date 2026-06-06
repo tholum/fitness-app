@@ -25,6 +25,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { Card, SectionHeader } from "@/components/ui";
+import { Portal } from "@/components/Portal";
 import { useConfirm } from "@/components/Confirm";
 import { validateVideoUrl } from "@/lib/format";
 
@@ -197,6 +198,7 @@ function Sheet({
 }) {
   if (!open) return null;
   return (
+    <Portal>
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
       role="dialog"
@@ -232,6 +234,7 @@ function Sheet({
         {children}
       </div>
     </div>
+    </Portal>
   );
 }
 

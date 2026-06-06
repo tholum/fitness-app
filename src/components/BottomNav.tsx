@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 
 /* ════════════════════════════════════════════════════════════════════
    BOTTOM NAV
-   Fixed, blurred bar with the center [FAB Check-In] flanked by primary
+   In-flow, blurred bar with the center [FAB Check-In] flanked by primary
    destinations: Today · Crew · [FAB] · Body · Progress · Account.
    This mirrors the Path Warden prototype's airy 4+FAB rhythm (Today · Crew
    · [FAB] · Body · Progress) and keeps Account as the one extra tab: it
@@ -108,7 +108,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-1/2 z-40 flex h-[84px] w-full max-w-[430px] -translate-x-1/2 items-center border-t border-line bg-bg2/70 px-1.5 pb-[18px] backdrop-blur-2xl"
+      className="relative w-full flex-none flex h-[84px] items-center border-t border-line bg-bg2/70 px-1.5 backdrop-blur-2xl"
       style={{ paddingBottom: "calc(18px + env(safe-area-inset-bottom))" }}
     >
       {LEFT_ITEMS.map((item) => (

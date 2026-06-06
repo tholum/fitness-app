@@ -13,7 +13,7 @@ import {
 /**
  * Authenticated app shell. Guards every (app) route, loads the user's
  * appearance preferences, and renders the Path Warden phone-style column
- * (centered, max ~430px) with the fixed bottom navigation.
+ * (centered, max ~430px) with the in-flow bottom navigation.
  */
 export default async function AppLayout({
   children,
@@ -58,7 +58,7 @@ export default async function AppLayout({
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: featureFlagScript(appearance) }}
       />
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col bg-bg">
+      <div className="relative mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col bg-bg">
         {/* Keyboard skip link: first focusable element, jumps past the nav. */}
         <a href="#main" className="skip-link">
           Skip to content
@@ -99,33 +99,22 @@ export default async function AppLayout({
           </g>
         </svg>
 
-        {/* Scrollable screen content; space at the bottom for the nav. */}
+        {/* Scrollable screen content. <main> is the internal scroller of the
+            fixed-height (100dvh) column; min-h-0 lets this flex child shrink
+            so it actually scrolls instead of pushing the nav off-screen. */}
         <main
           id="main"
           tabIndex={-1}
-          className="no-scrollbar relative z-10 flex-1 overflow-y-auto overscroll-contain px-[18px] pt-2 outline-none"
-          // Clear the fixed BottomNav on EVERY device: nav is 84px tall plus the
-          // home-indicator safe area (env(safe-area-inset-bottom)) on notched
-          // iPhones, plus a 16px gap so content never hides behind the bar.
-          style={{
-            paddingBottom: "calc(84px + env(safe-area-inset-bottom) + 16px)",
-          }}
+          className="no-scrollbar relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-[18px] pb-2 pt-2 outline-none"
         >
           <ConfirmProvider>{children}</ConfirmProvider>
-
-          {/* BottomNav lives INSIDE <main> on purpose. <main> is
-              `relative z-10`, which forms a stacking context; the in-page
-              bottom sheets/modals render inside {children} at z-50. If the nav
-              were a sibling of <main>, its fixed z-40 would sit in the parent
-              column's context and outrank main's entire z-10 subtree —
-              painting the nav OVER every sheet and burying each sheet's submit
-              button (you literally could not tap "Add Day"). Rendering the nav
-              inside <main> puts the nav (z-40) and the sheets (z-50) in the
-              SAME stacking context, so a sheet correctly paints above the nav.
-              The nav stays viewport-fixed because <main> sets no containing
-              block for fixed elements (overflow alone doesn't). */}
-          <BottomNav />
         </main>
+
+        {/* BottomNav is the LAST flex child of the 100dvh column, so it always
+            sits at the bottom of the dynamic viewport — always visible and
+            tracking the mobile URL bar. It is in normal flow (not fixed), so
+            overlays must portal to <body> to paint above it (see Portal.tsx). */}
+        <BottomNav />
       </div>
     </ThemeProvider>
   );

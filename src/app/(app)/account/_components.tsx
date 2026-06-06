@@ -13,6 +13,7 @@
 import { useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui";
+import { Portal } from "@/components/Portal";
 import {
   updateProfile,
   logPR,
@@ -326,6 +327,7 @@ function Sheet({
 }) {
   if (!open) return null;
   return (
+    <Portal>
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
       role="dialog"
@@ -361,6 +363,7 @@ function Sheet({
         {children}
       </div>
     </div>
+    </Portal>
   );
 }
 

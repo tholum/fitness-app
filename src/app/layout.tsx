@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { SWUpdater } from "@/components/SWUpdater";
 
 // The nonce-based CSP (src/middleware.ts) requires every HTML response to be
 // rendered per-request: Next.js only stamps the request's nonce onto its
@@ -40,7 +41,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <SWUpdater />
+        {children}
+      </body>
     </html>
   );
 }

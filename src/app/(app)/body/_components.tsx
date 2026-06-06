@@ -30,6 +30,7 @@ import {
   setWater,
   clearWater,
 } from "@/lib/actions";
+import { Portal } from "@/components/Portal";
 import { todayISO } from "@/lib/format";
 import type { Units, NutritionLog } from "@/lib/types";
 
@@ -73,6 +74,7 @@ interface SheetProps {
 function Sheet({ open, title, onClose, children }: SheetProps) {
   if (!open) return null;
   return (
+    <Portal>
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
       role="dialog"
@@ -108,6 +110,7 @@ function Sheet({ open, title, onClose, children }: SheetProps) {
         {children}
       </div>
     </div>
+    </Portal>
   );
 }
 

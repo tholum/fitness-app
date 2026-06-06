@@ -10,9 +10,8 @@
      const confirm = useConfirm();
      if (!(await confirm({ title: "Delete?", destructive: true }))) return;
 
-   <ConfirmProvider> renders the dialog and is mounted inside the (app) shell's
-   <main> so the dialog (z-50) paints above the fixed BottomNav (z-40) — the
-   same stacking rule the bottom sheets rely on.
+   The dialog renders through a <Portal> to <body> so its z-50 paints above
+   the in-flow BottomNav — the same stacking rule the bottom sheets rely on.
    ════════════════════════════════════════════════════════════════════ */
 
 import {
@@ -24,6 +23,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { Portal } from "@/components/Portal";
 
 export interface ConfirmOptions {
   title: string;
@@ -101,6 +101,7 @@ function ConfirmDialog({
   }, [onCancel]);
 
   return (
+    <Portal>
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-6"
       role="dialog"
@@ -141,5 +142,6 @@ function ConfirmDialog({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

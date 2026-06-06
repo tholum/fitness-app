@@ -4,6 +4,12 @@ const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
   disable: process.env.NODE_ENV === "development",
+  // SWUpdater (src/components/SWUpdater.tsx) is the single owner of SW
+  // registration + update detection so it can reliably reload the page on
+  // `controllerchange` and poll for updates on visibility/online. Letting
+  // serwist also inject its auto-register script would create a second,
+  // competing registrar. Freshness/auto-update is the whole point here.
+  register: false,
 });
 
 /**
