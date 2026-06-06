@@ -1,7 +1,7 @@
 {
   "name": "Path Warden",
   "short_name": "Path Warden",
-  "description": "The path is narrow. Walk it with intent.",
+  "description": "The path is narrow. Let's stand watch together.",
   "start_url": "/today",
   "scope": "/",
   "display": "standalone",

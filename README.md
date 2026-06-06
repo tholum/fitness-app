@@ -1,6 +1,6 @@
 # Path Warden
 
-> The path is narrow. Walk it with intent.
+> The path is narrow. Let's stand watch together.
 
 Path Warden is a mobile-first **Next.js 15 (App Router) + TypeScript + Tailwind +
 Supabase** PWA for MTNTOUGH-style training-program tracking, body & nutrition

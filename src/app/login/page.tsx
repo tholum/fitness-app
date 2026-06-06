@@ -275,7 +275,7 @@ function LoginForm() {
             Path Warden
           </h1>
           <p className="mt-3 text-sm text-muted">
-            Walk it with intent.
+            Let&apos;s stand watch together.
           </p>
         </div>
 

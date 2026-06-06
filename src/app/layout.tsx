@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Path Warden",
-  description: "The path is narrow. Walk it with intent.",
+  description: "The path is narrow. Let's stand watch together.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Path Warden" },
 };
