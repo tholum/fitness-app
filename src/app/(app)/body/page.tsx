@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { Card, SectionHeader } from "@/components/ui";
 import { getBodyToday, getProfile } from "@/lib/queries";
 import {
@@ -241,7 +242,8 @@ export default async function BodyPage() {
         <LogMetricsPill />
       </div>
 
-      {/* Fuel ring + macros */}
+      {/* Fuel ring + macros — taps through to the first-class /diet screen. */}
+      <Link href="/diet" className="block" aria-label="Open Nutrition">
       <Card className="mb-3.5 p-5 text-center">
         <FuelRing kcal={kcal} goal={GOALS.kcal} />
         <div className="mt-1.5 flex gap-2.5">
@@ -269,7 +271,14 @@ export default async function BodyPage() {
             No fuel logged yet today
           </p>
         ) : null}
+        <p className="mt-3 inline-flex items-center gap-1 font-cond text-[11px] font-semibold uppercase tracking-wide text-gold">
+          Macros &amp; goals
+          <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-current [stroke-width:2.6]">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </p>
       </Card>
+      </Link>
 
       {/* Body metrics */}
       <SectionHeader action={<BodyHistoryLink>History</BodyHistoryLink>}>
@@ -313,7 +322,19 @@ export default async function BodyPage() {
       )}
 
       {/* Today's fuel */}
-      <SectionHeader action={<LogLink kind="meal">+ Add</LogLink>}>
+      <SectionHeader
+        action={
+          <span className="flex items-center gap-3">
+            <Link
+              href="/diet"
+              className="font-cond text-[11px] font-semibold uppercase tracking-wide text-muted"
+            >
+              All macros
+            </Link>
+            <LogLink kind="meal">+ Add</LogLink>
+          </span>
+        }
+      >
         Today&apos;s Fuel
       </SectionHeader>
       {meals.length ? (

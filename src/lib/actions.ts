@@ -1019,6 +1019,7 @@ export async function logMeal(input: LogMealInput): Promise<ActionResult> {
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/body");
+  revalidatePath("/diet");
   return { ok: true };
 }
 
@@ -1057,6 +1058,7 @@ export async function updateMeal(id: string, patch: UpdateMealInput): Promise<Ac
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/body");
+  revalidatePath("/diet");
   return { ok: true };
 }
 
@@ -1073,6 +1075,7 @@ export async function deleteMeal(id: string): Promise<ActionResult> {
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/body");
+  revalidatePath("/diet");
   return { ok: true };
 }
 
@@ -1097,6 +1100,7 @@ export async function logWater(ml: number, date?: string): Promise<ActionResult<
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/body");
+  revalidatePath("/diet");
   return { ok: true, data: { ml: total } };
 }
 
@@ -1114,6 +1118,7 @@ export async function setWater(ml: number, date?: string): Promise<ActionResult<
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/body");
+  revalidatePath("/diet");
   return { ok: true, data: { ml: total } };
 }
 
@@ -1130,6 +1135,7 @@ export async function clearWater(date?: string): Promise<ActionResult> {
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/body");
+  revalidatePath("/diet");
   return { ok: true };
 }
 
