@@ -63,8 +63,8 @@ const ICONS = [
 const ACCENTS: ReadonlyArray<{ key: string; color: string }> = [
   { key: "blaze", color: "var(--accent)" },
   { key: "gold", color: "var(--gold)" },
-  { key: "moss", color: "var(--moss)" },
-  { key: "accent2", color: "var(--accent2)" },
+  { key: "moss", color: "var(--accent2)" },
+  { key: "slate", color: "#5a7d8c" },
 ];
 
 function accentColor(accent: string | null | undefined): string {
@@ -770,7 +770,7 @@ function TickButton({
       className={cx(
         "flex w-full items-center justify-center gap-2 rounded-[14px] px-4 py-3 font-display text-[14px] font-semibold uppercase tracking-[0.08em] transition-colors disabled:opacity-60",
         done
-          ? "border border-line bg-surface text-moss"
+          ? "border border-line bg-surface text-accent2"
           : "bg-grad text-bg shadow-[0_6px_18px_rgba(200,98,45,.28)]",
       )}
     >

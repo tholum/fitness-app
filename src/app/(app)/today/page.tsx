@@ -13,11 +13,10 @@ import {
   getTrainingScheduleToday,
   getNudges,
   getUnseenNudgeCount,
-  getTrackersWithProgress,
-  getTrackerStreak,
+  getTrackersForDashboard,
 } from "@/lib/queries";
 import { validateVideoUrl } from "@/lib/format";
-import { WeeklyProgress, type WeeklyProgressData } from "@/components/WeeklyProgress";
+import { WeeklyProgress } from "@/components/WeeklyProgress";
 import { TYPE_LABEL, trackerHref, trackerIcon } from "@/lib/trackerNav";
 import { NudgeInbox } from "../checkin/_components";
 
@@ -86,7 +85,7 @@ export default async function TodayPage() {
     schedule,
     nudges,
     unseenNudges,
-    trackers,
+    goalRows,
   ] = await Promise.all([
     getTodaySession(profile?.id),
     getCrewToday(profile?.id),
@@ -96,20 +95,11 @@ export default async function TodayPage() {
     getTrainingScheduleToday(profile?.id),
     getNudges(profile?.id),
     getUnseenNudgeCount(profile?.id),
-    getTrackersWithProgress(profile?.id),
+    // Unified dashboard: every active goal with this week's progress AND its
+    // streak, resolved together via batched fetches (folded into this parallel
+    // block — no separate streak fan-out / waterfall stage).
+    getTrackersForDashboard(profile?.id),
   ]);
-
-  // Unified dashboard: every active goal with this week's progress, deep-linking
-  // into its dedicated screen. Streaks resolved for streak-bearing cadences.
-  const goalRows = await Promise.all(
-    trackers.map(async ({ tracker, progress }) => ({
-      tracker,
-      progress: {
-        ...progress,
-        streak: await getTrackerStreak(tracker),
-      } satisfies WeeklyProgressData,
-    })),
-  );
 
   // Phase 4: is TODAY a scheduled training day? In 'days' mode a non-scheduled
   // day is a rest day — it never counts against the streak, so we soften the

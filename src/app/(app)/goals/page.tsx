@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Card, SectionHeader } from "@/components/ui";
 import { WeeklyProgress, type WeeklyProgressData } from "@/components/WeeklyProgress";
 import { createClient } from "@/lib/supabase/server";
-import { getTrackersWithProgress, getTrackerStreak } from "@/lib/queries";
+import { getTrackersForDashboard } from "@/lib/queries";
 import { TYPE_LABEL, trackerHref, trackerIcon } from "@/lib/trackerNav";
 import type { Tracker, TrackerType } from "@/lib/types";
 
@@ -41,18 +41,9 @@ export default async function GoalsHubPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const all = await getTrackersWithProgress(user.id);
-
-  // Streaks for streak-bearing cadences (daily_binary / specific_weekdays).
-  const withStreak = await Promise.all(
-    all.map(async ({ tracker, progress }) => ({
-      tracker,
-      progress: {
-        ...progress,
-        streak: await getTrackerStreak(tracker),
-      } satisfies WeeklyProgressData,
-    })),
-  );
+  // Every active goal with this-week progress AND its streak, batched together
+  // (≤3 progress queries + 1 streak query). Exercise streak = profile streak.
+  const withStreak = await getTrackersForDashboard(user.id);
 
   const byType = new Map<TrackerType, typeof withStreak>();
   for (const row of withStreak) {

@@ -185,11 +185,18 @@ export function QuickLogFab({ trackers }: { trackers: QuickLogTracker[] }) {
               ) : (
                 <ul className="space-y-2">
                   {trackers.map((t) => {
-                    const isAmount = t.cadenceType === "amount_per_week";
+                    // exercise/diet are NOT backed by tracker_logs (exercise →
+                    // session_logs, diet → nutrition_logs), and amount_per_week
+                    // needs a value. All three deep-link into their dedicated
+                    // screen rather than offering a dead inline tick.
+                    const deepLink =
+                      t.cadenceType === "amount_per_week" ||
+                      t.type === "exercise" ||
+                      t.type === "diet";
                     const done = tickedToday.has(t.id);
                     return (
                       <li key={t.id}>
-                        {isAmount ? (
+                        {deepLink ? (
                           <Link
                             href={trackerHref(t.type)}
                             onClick={close}
@@ -203,7 +210,11 @@ export function QuickLogFab({ trackers }: { trackers: QuickLogTracker[] }) {
                                 {t.title}
                               </span>
                               <span className="block font-cond text-[10px] uppercase tracking-wide text-faint">
-                                Add {t.unit ?? "amount"} →
+                                {t.type === "exercise"
+                                  ? "Open training →"
+                                  : t.type === "diet"
+                                    ? "Open nutrition →"
+                                    : `Add ${t.unit ?? "amount"} →`}
                               </span>
                             </span>
                             <span className="font-display text-gold" aria-hidden>

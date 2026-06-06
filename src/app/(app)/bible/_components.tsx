@@ -532,7 +532,7 @@ export function MarkReadButton({
       className={cx(
         "flex w-full items-center justify-center gap-2 rounded-[16px] px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] transition-colors disabled:opacity-60",
         done
-          ? "border border-line bg-surface text-moss"
+          ? "border border-line bg-surface text-accent2"
           : "bg-grad text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)]",
       )}
     >
