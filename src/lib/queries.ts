@@ -5,7 +5,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { todayISO, startOfWeekISO, weekDates } from "@/lib/format";
+import { todayISO, startOfWeekISO, weekDates, toISODate } from "@/lib/format";
 import type {
   Profile,
   SessionLog,
@@ -973,6 +973,116 @@ export async function getTrackersWithProgress(
       progress: await getWeeklyProgress(tracker, uid),
     })),
   );
+}
+
+/**
+ * The user's singleton bible tracker, or null if none has been created yet.
+ * (Phase 3 first-class screen entry point.)
+ */
+export async function getBibleTracker(userId?: string): Promise<Tracker | null> {
+  const supabase = await createClient();
+  const uid = userId ?? (await currentUserId());
+  if (!uid) return null;
+  const { data, error } = await supabase
+    .from("trackers")
+    .select("*")
+    .eq("user_id", uid)
+    .eq("type", "bible")
+    .eq("archived", false)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as Tracker;
+}
+
+/**
+ * The set of dates (ISO YYYY-MM-DD) a tracker has a log on, within the last
+ * `lookbackDays` days (inclusive of today). Used to derive streaks for
+ * tracker_logs-backed types (bible / custom) without a DB roundtrip per day.
+ */
+async function trackerLoggedDates(
+  trackerId: string,
+  lookbackDays = 400,
+): Promise<Set<string>> {
+  const supabase = await createClient();
+  const since = new Date();
+  since.setDate(since.getDate() - lookbackDays);
+  const { data } = await supabase
+    .from("tracker_logs")
+    .select("date")
+    .eq("tracker_id", trackerId)
+    .gte("date", toISODate(since));
+  return new Set((data ?? []).map((r) => r.date as string));
+}
+
+/**
+ * Compute a tracker's current streak from its tracker_logs, honoring cadence:
+ *
+ *   • daily_binary      → consecutive distinct days ending today (or yesterday
+ *                         if today isn't logged yet, so an unfinished today
+ *                         doesn't zero a live streak). Mirrors the session
+ *                         streak rule in actions.consecutiveDayStreak.
+ *   • specific_weekdays → consecutive SCHEDULED days satisfied, walking
+ *                         backwards and skipping non-scheduled days (rest days
+ *                         never break the streak — same spirit as 0009 training
+ *                         goals). Today only counts against the streak once it
+ *                         is itself a scheduled day that has passed/now.
+ *   • other cadences    → 0 here (richer per-period streaks are out of scope).
+ *
+ * Returns 0 when there are no logs or no schedule. Never throws.
+ */
+export async function getTrackerStreak(tracker: Tracker): Promise<number> {
+  if (
+    tracker.cadence_type !== "daily_binary" &&
+    tracker.cadence_type !== "specific_weekdays"
+  ) {
+    return 0;
+  }
+
+  const logged = await trackerLoggedDates(tracker.id);
+  if (logged.size === 0) return 0;
+
+  const cursor = new Date();
+  cursor.setHours(0, 0, 0, 0);
+
+  if (tracker.cadence_type === "daily_binary") {
+    // Anchor on today if logged, else yesterday — so an unfinished today
+    // doesn't break an otherwise-live streak.
+    if (!logged.has(toISODate(cursor))) {
+      cursor.setDate(cursor.getDate() - 1);
+      if (!logged.has(toISODate(cursor))) return 0;
+    }
+    let streak = 0;
+    while (logged.has(toISODate(cursor))) {
+      streak += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
+  }
+
+  // specific_weekdays — count satisfied scheduled days, skipping rest days.
+  const scheduled = new Set(tracker.scheduled_weekdays ?? []);
+  if (scheduled.size === 0) return 0;
+
+  // If today is a scheduled day but isn't logged yet, don't penalize it: start
+  // the walk from yesterday so a not-yet-done today is forgiven.
+  if (scheduled.has(cursor.getDay()) && !logged.has(toISODate(cursor))) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  let streak = 0;
+  // Bounded walk (covers >1yr of weeks) — stop at the first missed scheduled day.
+  for (let i = 0; i < 400; i++) {
+    const dow = cursor.getDay();
+    if (scheduled.has(dow)) {
+      if (logged.has(toISODate(cursor))) {
+        streak += 1;
+      } else {
+        break; // a scheduled day with no log breaks the streak
+      }
+    }
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
 }
 
 // Re-export so screens can pull the tracker_logs row type alongside helpers.

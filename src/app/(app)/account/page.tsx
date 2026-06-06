@@ -36,6 +36,16 @@ const QUICK_LINKS: QuickLink[] = [
     ),
   },
   {
+    href: "/bible",
+    label: "Bible Reading",
+    sub: "Daily reading, streak & plans",
+    icon: (
+      <svg viewBox="0 0 24 24">
+        <path d="M4 5a2 2 0 012-2h12v16H6a2 2 0 00-2 2zM18 3v18M9 7h5M9 10h5" />
+      </svg>
+    ),
+  },
+  {
     href: "/programs",
     label: "Programs",
     sub: "Build & manage training plans",
