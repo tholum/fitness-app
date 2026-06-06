@@ -5,7 +5,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { todayISO, startOfWeekISO } from "@/lib/format";
+import { todayISO, startOfWeekISO, weekDates } from "@/lib/format";
 import type {
   Profile,
   SessionLog,
@@ -27,6 +27,8 @@ import type {
   ProgramEnrollment,
   Exercise,
   Nudge,
+  Tracker,
+  TrackerLog,
 } from "@/lib/types";
 
 // ── Composite result shapes screens consume ──────────────────────────────
@@ -748,3 +750,230 @@ export async function getUnseenNudgeCount(userId?: string): Promise<number> {
   if (error) return 0;
   return count ?? 0;
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// TRACKERS / GOALS (0010)
+// ════════════════════════════════════════════════════════════════════════
+
+/**
+ * This-week progress for a single tracker, computed from the RIGHT source per
+ * type (see getWeeklyProgress). A presentational shape consumed by the
+ * WeeklyProgress component.
+ *
+ *   done    — progress so far this week (a count for times_per_week /
+ *             specific_weekdays / daily_binary; an accumulated amount for
+ *             amount_per_week).
+ *   target  — the weekly target (count or amount). 0 when none is set.
+ *   unit    — display unit for amount_per_week (e.g. "min"); null otherwise.
+ *   perDay  — Mon→Sun (7 entries, index 0 = Monday) value for the current
+ *             week. A boolean for binary/weekday cadences, a number for amounts.
+ *   streak  — completed-period streak (weeks for times_per_week /
+ *             amount_per_week; days for daily_binary; scheduled-days for
+ *             specific_weekdays). 0 in Phase 1 where not yet computed.
+ *   scheduledWeekdays — for specific_weekdays: committed weekdays as Mon→Sun
+ *             booleans (index 0 = Monday); null for other cadences.
+ */
+export interface WeeklyProgress {
+  done: number;
+  target: number;
+  unit: string | null;
+  /** 7 entries, Monday-first (index 0 = Mon, 6 = Sun). */
+  perDay: Array<boolean | number>;
+  streak: number;
+  /** Mon-first committed weekdays; only set for specific_weekdays. */
+  scheduledWeekdays: boolean[] | null;
+}
+
+/** All non-archived trackers for a user, ordered for display. */
+export async function getTrackers(userId?: string): Promise<Tracker[]> {
+  const supabase = await createClient();
+  const uid = userId ?? (await currentUserId());
+  if (!uid) return [];
+
+  const { data, error } = await supabase
+    .from("trackers")
+    .select("*")
+    .eq("user_id", uid)
+    .eq("archived", false)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error || !data) return [];
+  return data as Tracker[];
+}
+
+/**
+ * Map a Postgres dow (0=Sun..6=Sat) to a Mon-first index (0=Mon..6=Sun), so
+ * the perDay / scheduledWeekdays arrays line up with the Mon-first UI strip.
+ */
+function dowToMonIndex(dow: number): number {
+  return (dow + 6) % 7;
+}
+
+/**
+ * Compute THIS week's progress for a tracker from the correct source:
+ *
+ *   bible / custom → tracker_logs (own per-day entries).
+ *   diet           → nutrition_logs, summed for the week, vs. a macro target
+ *                    from config (config.targetKey picks the macro; defaults to
+ *                    kcal). amount_per_week semantics.
+ *   exercise       → session_logs (completed), as a weekly session count.
+ *
+ * Streak is left at 0 here in Phase 1 except for the cheap weekday/daily cases;
+ * the richer streak logic (mirroring recompute_my_stats) lands with the
+ * per-type screens. Always returns a well-formed WeeklyProgress (never throws).
+ */
+export async function getWeeklyProgress(
+  tracker: Tracker,
+  userId?: string,
+): Promise<WeeklyProgress> {
+  const supabase = await createClient();
+  const uid = userId ?? tracker.user_id ?? (await currentUserId());
+
+  const week = weekDates(); // 7 ISO dates, Monday-first
+  const weekStart = week[0];
+  const weekEnd = week[6];
+
+  const target =
+    tracker.cadence_type === "amount_per_week"
+      ? tracker.weekly_target_amount ?? 0
+      : tracker.cadence_type === "times_per_week"
+        ? tracker.weekly_target_count ?? 0
+        : // specific_weekdays → target is the # of committed days;
+          // daily_binary → 7 (every day).
+          tracker.cadence_type === "specific_weekdays"
+          ? (tracker.scheduled_weekdays ?? []).length
+          : 7;
+
+  const unit =
+    tracker.cadence_type === "amount_per_week" ? tracker.unit ?? null : null;
+
+  const scheduledWeekdays =
+    tracker.cadence_type === "specific_weekdays"
+      ? (() => {
+          const set = new Set(tracker.scheduled_weekdays ?? []);
+          const arr = Array(7).fill(false) as boolean[];
+          for (const dow of set) arr[dowToMonIndex(dow)] = true;
+          return arr;
+        })()
+      : null;
+
+  const empty: WeeklyProgress = {
+    done: 0,
+    target,
+    unit,
+    perDay: Array(7).fill(tracker.cadence_type === "amount_per_week" ? 0 : false),
+    streak: 0,
+    scheduledWeekdays,
+  };
+  if (!uid) return empty;
+
+  // ── DIET → nutrition_logs vs. config macro target ──────────────────────
+  if (tracker.type === "diet") {
+    const cfg = (tracker.config ?? {}) as Record<string, unknown>;
+    const macro =
+      typeof cfg.targetKey === "string" &&
+      ["kcal", "protein", "carbs", "fat"].includes(cfg.targetKey)
+        ? (cfg.targetKey as "kcal" | "protein" | "carbs" | "fat")
+        : "kcal";
+    const dietTarget =
+      typeof cfg.weeklyTarget === "number"
+        ? cfg.weeklyTarget
+        : typeof cfg.dailyTarget === "number"
+          ? cfg.dailyTarget * 7
+          : target;
+
+    const { data: rows } = await supabase
+      .from("nutrition_logs")
+      .select(`date, ${macro}`)
+      .eq("user_id", uid)
+      .gte("date", weekStart)
+      .lte("date", weekEnd);
+
+    const perDay = Array(7).fill(0) as number[];
+    let done = 0;
+    for (const r of (rows ?? []) as Array<Record<string, unknown>>) {
+      const v = Number(r[macro] ?? 0) || 0;
+      const idx = week.indexOf(r.date as string);
+      if (idx >= 0) perDay[idx] += v;
+      done += v;
+    }
+    return {
+      done,
+      target: dietTarget,
+      unit: macro === "kcal" ? "kcal" : "g",
+      perDay,
+      streak: 0,
+      scheduledWeekdays: null,
+    };
+  }
+
+  // ── EXERCISE → completed session_logs as a weekly session count ─────────
+  if (tracker.type === "exercise") {
+    const { data: rows } = await supabase
+      .from("session_logs")
+      .select("date")
+      .eq("user_id", uid)
+      .eq("completed", true)
+      .gte("date", weekStart)
+      .lte("date", weekEnd);
+
+    const perDay = Array(7).fill(false) as boolean[];
+    const days = new Set<string>();
+    for (const r of (rows ?? []) as Array<{ date: string }>) {
+      days.add(r.date);
+      const idx = week.indexOf(r.date);
+      if (idx >= 0) perDay[idx] = true;
+    }
+    return {
+      done: days.size,
+      target,
+      unit: null,
+      perDay,
+      streak: 0,
+      scheduledWeekdays,
+    };
+  }
+
+  // ── BIBLE / CUSTOM → tracker_logs ───────────────────────────────────────
+  const { data: rows } = await supabase
+    .from("tracker_logs")
+    .select("date, value")
+    .eq("tracker_id", tracker.id)
+    .gte("date", weekStart)
+    .lte("date", weekEnd);
+
+  const isAmount = tracker.cadence_type === "amount_per_week";
+  const perDay = Array(7).fill(isAmount ? 0 : false) as Array<number | boolean>;
+  let done = 0;
+  for (const r of (rows ?? []) as Array<{ date: string; value: number }>) {
+    const v = Number(r.value ?? 0) || 0;
+    const idx = week.indexOf(r.date);
+    if (isAmount) {
+      if (idx >= 0) perDay[idx] = (perDay[idx] as number) + v;
+      done += v;
+    } else {
+      if (idx >= 0) perDay[idx] = true;
+      done += 1;
+    }
+  }
+
+  return { done, target, unit, perDay, streak: 0, scheduledWeekdays };
+}
+
+/** Convenience: all of a user's trackers paired with this-week progress. */
+export async function getTrackersWithProgress(
+  userId?: string,
+): Promise<Array<{ tracker: Tracker; progress: WeeklyProgress }>> {
+  const uid = userId ?? (await currentUserId());
+  if (!uid) return [];
+  const trackers = await getTrackers(uid);
+  return Promise.all(
+    trackers.map(async (tracker) => ({
+      tracker,
+      progress: await getWeeklyProgress(tracker, uid),
+    })),
+  );
+}
+
+// Re-export so screens can pull the tracker_logs row type alongside helpers.
+export type { TrackerLog };

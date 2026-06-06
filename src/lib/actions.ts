@@ -17,7 +17,13 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { todayISO, toISODate } from "@/lib/format";
-import type { BlockType } from "@/lib/types";
+import type {
+  BlockType,
+  CadenceType,
+  Json,
+  TrackerPeriod,
+  TrackerType,
+} from "@/lib/types";
 // Appearance's typed/normalized shape is owned by ThemeProvider (gap 42); the
 // `import type` is erased at compile time, so importing it into this server
 // module does not cross the client/server boundary.
@@ -48,6 +54,9 @@ const LIMITS = {
   blockLabel: 200,
   notes: 4000, // session notes (a few KB)
   avatarUrl: 2048, // URL — generous but bounded
+  trackerTitle: 120, // goal/tracker title
+  trackerUnit: 24, // amount_per_week unit label (min/pages/…)
+  trackerNote: 280, // per-day log note (mirrors the feed note cap)
 } as const;
 
 /**
@@ -1212,5 +1221,273 @@ export async function saveTrainingGoal(input: {
 
   // Streak (in the header), Today, and Progress all read the recomputed stats.
   revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// TRACKERS / GOALS (0010)
+// All RLS-safe: every write is scoped to user_id = auth.uid() and the
+// trackers/tracker_logs policies (0010) enforce ownership at the DB too.
+// ════════════════════════════════════════════════════════════════════════
+
+const TRACKER_TYPES: readonly TrackerType[] = ["exercise", "diet", "bible", "custom"];
+const CADENCE_TYPES: readonly CadenceType[] = [
+  "times_per_week",
+  "amount_per_week",
+  "specific_weekdays",
+  "daily_binary",
+];
+const TRACKER_PERIODS: readonly TrackerPeriod[] = ["weekly", "monthly"];
+
+/** Sanitize a weekday array to distinct, sorted Postgres dow values (0..6). */
+function cleanWeekdays(days: number[] | null | undefined): number[] {
+  if (!Array.isArray(days)) return [];
+  return [...new Set(days.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort(
+    (a, b) => a - b,
+  );
+}
+
+// ── createTracker ────────────────────────────────────────────────────────
+export interface CreateTrackerInput {
+  type: TrackerType;
+  title: string;
+  cadenceType: CadenceType;
+  icon?: string | null;
+  accent?: string | null;
+  period?: TrackerPeriod;
+  weeklyTargetCount?: number | null;
+  weeklyTargetAmount?: number | null;
+  unit?: string | null;
+  scheduledWeekdays?: number[] | null;
+  config?: Json;
+  shared?: boolean;
+  sortOrder?: number;
+}
+
+export async function createTracker(
+  input: CreateTrackerInput,
+): Promise<ActionResult<{ id: string }>> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { ok: false, error: "Not authenticated" };
+
+  if (!TRACKER_TYPES.includes(input.type)) return { ok: false, error: "Invalid tracker type" };
+  if (!CADENCE_TYPES.includes(input.cadenceType))
+    return { ok: false, error: "Invalid cadence type" };
+
+  const title = input.title?.trim() ?? "";
+  if (!title) return { ok: false, error: "Title is required" };
+  const titleErr = tooLong(title, LIMITS.trackerTitle, "Title");
+  if (titleErr) return titleErr;
+
+  const unit = input.unit?.trim() || null;
+  if (unit) {
+    const unitErr = tooLong(unit, LIMITS.trackerUnit, "Unit");
+    if (unitErr) return unitErr;
+  }
+
+  const period = input.period && TRACKER_PERIODS.includes(input.period) ? input.period : "weekly";
+  const weekdays =
+    input.cadenceType === "specific_weekdays" ? cleanWeekdays(input.scheduledWeekdays) : null;
+  if (input.cadenceType === "specific_weekdays" && (weekdays?.length ?? 0) === 0) {
+    return { ok: false, error: "Pick at least one weekday" };
+  }
+
+  const { data, error } = await supabase
+    .from("trackers")
+    .insert({
+      user_id: user.id,
+      type: input.type,
+      title,
+      icon: input.icon?.trim() || null,
+      accent: input.accent?.trim() || null,
+      cadence_type: input.cadenceType,
+      period,
+      weekly_target_count:
+        input.cadenceType === "times_per_week"
+          ? Math.max(1, Math.trunc(input.weeklyTargetCount ?? 1))
+          : (input.weeklyTargetCount ?? null),
+      weekly_target_amount:
+        input.cadenceType === "amount_per_week"
+          ? Math.max(0, input.weeklyTargetAmount ?? 0)
+          : (input.weeklyTargetAmount ?? null),
+      unit,
+      scheduled_weekdays: weekdays,
+      config: input.config ?? {},
+      shared: input.shared ?? true,
+      sort_order: input.sortOrder ?? 0,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    // The partial unique index (user_id, type) where type <> 'custom' surfaces
+    // as a 23505; translate it into a friendly singleton message.
+    if (error.code === "23505") {
+      return { ok: false, error: `You already have a ${input.type} tracker` };
+    }
+    return { ok: false, error: error.message };
+  }
+
+  revalidatePath("/goals");
+  return { ok: true, data: { id: data.id as string } };
+}
+
+// ── updateTracker ──────────────────────────────────────────────────────────
+export interface UpdateTrackerInput {
+  title?: string;
+  icon?: string | null;
+  accent?: string | null;
+  cadenceType?: CadenceType;
+  period?: TrackerPeriod;
+  weeklyTargetCount?: number | null;
+  weeklyTargetAmount?: number | null;
+  unit?: string | null;
+  scheduledWeekdays?: number[] | null;
+  config?: Json;
+  shared?: boolean;
+  sortOrder?: number;
+}
+
+export async function updateTracker(
+  id: string,
+  patch: UpdateTrackerInput,
+): Promise<ActionResult> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { ok: false, error: "Not authenticated" };
+
+  const fields: Record<string, unknown> = {};
+
+  if (patch.title !== undefined) {
+    const title = patch.title.trim();
+    if (!title) return { ok: false, error: "Title is required" };
+    const titleErr = tooLong(title, LIMITS.trackerTitle, "Title");
+    if (titleErr) return titleErr;
+    fields.title = title;
+  }
+  if (patch.icon !== undefined) fields.icon = patch.icon?.trim() || null;
+  if (patch.accent !== undefined) fields.accent = patch.accent?.trim() || null;
+  if (patch.cadenceType !== undefined) {
+    if (!CADENCE_TYPES.includes(patch.cadenceType))
+      return { ok: false, error: "Invalid cadence type" };
+    fields.cadence_type = patch.cadenceType;
+  }
+  if (patch.period !== undefined) {
+    if (!TRACKER_PERIODS.includes(patch.period))
+      return { ok: false, error: "Invalid period" };
+    fields.period = patch.period;
+  }
+  if (patch.weeklyTargetCount !== undefined) fields.weekly_target_count = patch.weeklyTargetCount;
+  if (patch.weeklyTargetAmount !== undefined)
+    fields.weekly_target_amount = patch.weeklyTargetAmount;
+  if (patch.unit !== undefined) {
+    const unit = patch.unit?.trim() || null;
+    if (unit) {
+      const unitErr = tooLong(unit, LIMITS.trackerUnit, "Unit");
+      if (unitErr) return unitErr;
+    }
+    fields.unit = unit;
+  }
+  if (patch.scheduledWeekdays !== undefined) {
+    const days = cleanWeekdays(patch.scheduledWeekdays);
+    fields.scheduled_weekdays = days.length ? days : null;
+  }
+  if (patch.config !== undefined) fields.config = patch.config;
+  if (patch.shared !== undefined) fields.shared = patch.shared;
+  if (patch.sortOrder !== undefined) fields.sort_order = patch.sortOrder;
+
+  if (Object.keys(fields).length === 0) return { ok: true };
+
+  const { error } = await supabase
+    .from("trackers")
+    .update(fields)
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/goals");
+  return { ok: true };
+}
+
+// ── archiveTracker ─────────────────────────────────────────────────────────
+/** Soft-delete: archive (or restore) a tracker so it leaves the active list. */
+export async function archiveTracker(
+  id: string,
+  archived = true,
+): Promise<ActionResult> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { ok: false, error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("trackers")
+    .update({ archived })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/goals");
+  return { ok: true };
+}
+
+// ── logTracker ─────────────────────────────────────────────────────────────
+export interface LogTrackerInput {
+  trackerId: string;
+  /** Defaults to today. */
+  date?: string;
+  /** 1 for binary / a session; the amount for amount_per_week. Defaults to 1. */
+  value?: number;
+  note?: string | null;
+}
+
+/**
+ * Upsert today's (or a given day's) log for a tracker — one row per
+ * (tracker, date). RLS-safe: the tracker_logs WITH CHECK requires the tracker
+ * be owned by auth.uid(), and a DB trigger forces tracker_logs.user_id to the
+ * tracker's owner regardless of what is sent.
+ */
+export async function logTracker(input: LogTrackerInput): Promise<ActionResult> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { ok: false, error: "Not authenticated" };
+
+  if (!input.trackerId) return { ok: false, error: "Missing tracker" };
+  const note = input.note?.trim() || null;
+  if (note) {
+    const noteErr = tooLong(note, LIMITS.trackerNote, "Note");
+    if (noteErr) return noteErr;
+  }
+
+  const { error } = await supabase.from("tracker_logs").upsert(
+    {
+      tracker_id: input.trackerId,
+      user_id: user.id, // normalized to the tracker owner by the DB trigger
+      date: input.date ?? todayISO(),
+      value: input.value ?? 1,
+      note,
+    },
+    { onConflict: "tracker_id,date" },
+  );
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/goals");
+  return { ok: true };
+}
+
+// ── unlogTracker ───────────────────────────────────────────────────────────
+/** Remove a day's log for a tracker (e.g. untick a daily_binary day). */
+export async function unlogTracker(
+  trackerId: string,
+  date?: string,
+): Promise<ActionResult> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { ok: false, error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("tracker_logs")
+    .delete()
+    .eq("tracker_id", trackerId)
+    .eq("date", date ?? todayISO())
+    .eq("user_id", user.id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/goals");
   return { ok: true };
 }
