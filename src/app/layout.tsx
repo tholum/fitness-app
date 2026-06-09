@@ -1,6 +1,27 @@
 import type { Metadata, Viewport } from "next";
+import { Oswald, Barlow, Barlow_Semi_Condensed } from "next/font/google";
 import "./globals.css";
 import { SWUpdater } from "@/components/SWUpdater";
+
+// Self-hosted via next/font (vs the old UA-sniffed Google Fonts <link>):
+// identical, well-shaped woff2 on every device, no fallback-metric flash —
+// the <link> route produced collapsed word spaces / stray intra-word gaps
+// in tracked condensed labels on mobile UAs.
+const oswald = Oswald({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-display",
+});
+const barlow = Barlow({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-body",
+});
+const barlowCond = Barlow_Semi_Condensed({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-cond",
+});
 
 // The nonce-based CSP (src/middleware.ts) requires every HTML response to be
 // rendered per-request: Next.js only stamps the request's nonce onto its
@@ -32,15 +53,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-theme="dark" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html
+      lang="en"
+      data-theme="dark"
+      suppressHydrationWarning
+      className={`${oswald.variable} ${barlow.variable} ${barlowCond.variable}`}
+    >
       <body>
         <SWUpdater />
         {children}

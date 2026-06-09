@@ -31,13 +31,22 @@
      the 9px label clears AA (4.5:1) — the raw --accent (#c8622d, 4.33:1) does not. */
   --nav-active: #d2703c;
 
+  /* FAB glow — tuned per theme: the dark glow at 50% reads as a muddy
+     stain over a cream background. */
+  --fab-glow: rgba(200, 98, 45, 0.5);
+
   --grad: linear-gradient(135deg, #c8622d, #d9a441);
   --grad2: linear-gradient(135deg, #7a8b52, #c8622d);
 
+  /* Ink for text/icons sitting ON the orange gradient (or solid accent).
+     Theme-INVARIANT: the gradient stops are literal hex in both themes, so
+     the ink must not flip with --bg (cream-on-orange fails contrast). */
+  --on-grad: #1c1a17;
+
   --radius: 22px;
-  --font-display: "Oswald";
-  --font-body: "Barlow";
-  --font-cond: "Barlow Semi Condensed";
+  /* --font-display / --font-body / --font-cond are set on <html> by
+     next/font in src/app/layout.tsx (self-hosted Oswald / Barlow /
+     Barlow Semi Condensed). */
 
   color-scheme: dark;
 }
@@ -58,6 +67,7 @@
   --gold: #805c0e;      /* SectionHeader actions (text-gold) — passes AA on light; gradients keep literal #d9a441 */
   --danger: #9a3b2f;    /* error text (text-danger) — deeper brick red passes AA on light */
   --nav-active: #9e4a1e; /* active bottom-nav label — burnt blaze, passes AA on light */
+  --fab-glow: rgba(200, 98, 45, 0.22);
   color-scheme: light;
 }
 
@@ -71,6 +81,20 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  /* Mobile Chrome "font boosting" inflates text blocks unevenly when it
+     thinks the page is wider than the screen — hard-disable it. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  /* Belt-and-suspenders: decorative absolute-positioned bleeds (glow blobs)
+     must never widen the document — a wider document expands the mobile
+     layout viewport and breaks fixed-position sheets. */
+  overflow-x: clip;
+}
+
 /* ════════════════════════════════════════════════════════════════════
    KEYBOARD FOCUS
    Mouse/touch interaction stays clean (no outline), but keyboard users
@@ -79,10 +103,18 @@
    focus:border-accent change as a secondary cue. Uses :focus-visible so
    the ring only appears for keyboard (and other non-pointer) focus.
    ════════════════════════════════════════════════════════════════════ */
-:focus-visible {
+:focus-visible:not(input):not(select):not(textarea) {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Form fields keep their own focus cue (focus:border-accent) — the outline
+   on top of it reads as a doubled ring on autofocused sheet inputs. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
 }
 
 /* Suppress the default (non-:focus-visible) outline for pointer focus. */
@@ -115,7 +147,7 @@
   font-family: var(--font-display), system-ui, sans-serif;
   font-size: 14px;
   font-weight: 600;
-  color: var(--bg);
+  color: var(--on-grad);
   transition: top 0.15s ease;
 }
 .skip-link:focus {
@@ -134,8 +166,20 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-body), system-ui, sans-serif;
+  /* Barlow's space glyph is unusually narrow (~0.18em): at the app's 11-13px
+     sizes word gaps collapse into letter gaps after round terminals
+     ("sessionsthisweek", "crew'sgot"). Widen ONLY the spaces. */
+  word-spacing: 0.06em;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
+}
+
+/* The condensed/display families are used almost exclusively for TRACKED
+   uppercase labels; letter-spacing widens letter gaps but not the (already
+   narrow) space, so word boundaries blur ("GOAL(PER MEMBER)"). Compensate. */
+.font-cond,
+.font-display {
+  word-spacing: 0.1em;
 }
 
 /* hide scrollbars in the app shell */

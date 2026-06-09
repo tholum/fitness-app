@@ -93,7 +93,7 @@ export function GoalEditor({
   return (
     <div className="space-y-5">
       {/* Mode */}
-      <Card>
+      <Card className="p-5">
         <SectionHeader>Goal type</SectionHeader>
         <p className="mb-3 text-sm leading-relaxed text-muted">
           Choose how your streak is measured so rest days never count against
@@ -111,7 +111,7 @@ export function GoalEditor({
 
       {/* Specific days — shared WeekdayPicker */}
       {mode === "days" ? (
-        <Card>
+        <Card className="p-5">
           <SectionHeader>Training days</SectionHeader>
           <p className="mb-3 text-sm leading-relaxed text-muted">
             Tap the days you train. A scheduled day you miss breaks the streak;
@@ -128,7 +128,7 @@ export function GoalEditor({
         </Card>
       ) : (
         /* Weekly count */
-        <Card>
+        <Card className="p-5">
           <SectionHeader>Weekly target</SectionHeader>
           <p className="mb-4 text-sm leading-relaxed text-muted">
             Train any days you like — just hit this many sessions each week. Your
@@ -181,7 +181,7 @@ export function GoalEditor({
           type="button"
           onClick={save}
           disabled={pending || daysInvalid}
-          className="w-full rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
+          className="w-full rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-on-grad shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
         >
           {pending ? "Saving…" : "Save schedule"}
         </button>
@@ -189,7 +189,7 @@ export function GoalEditor({
 
       {/* This week — read-only exercise progress (the dashboard's own visual) */}
       {weeklyProgress ? (
-        <Card>
+        <Card className="p-5">
           <SectionHeader
             action={
               <span className="font-cond text-[11px] uppercase tracking-wide text-gold">

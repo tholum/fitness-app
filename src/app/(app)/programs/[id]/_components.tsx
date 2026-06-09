@@ -217,7 +217,6 @@ export function ProgramTreeProvider({
               type="text"
               placeholder="e.g. Lower Body Strength"
               className={inputCls}
-              autoFocus
             />
           </Field>
           <div className="flex gap-3">
@@ -347,7 +346,7 @@ export function ReadOnlyCloneCTA({
         type="button"
         onClick={clone}
         disabled={pending}
-        className="inline-flex items-center gap-2 rounded-[16px] bg-grad px-4 py-3 font-display text-[13px] font-semibold uppercase tracking-wide text-bg disabled:opacity-60"
+        className="inline-flex items-center gap-2 rounded-[16px] bg-grad px-4 py-3 font-display text-[13px] font-semibold uppercase tracking-wide text-on-grad disabled:opacity-60"
       >
         <svg
           viewBox="0 0 24 24"
@@ -439,7 +438,7 @@ export function ProgramTree({
           <button
             type="button"
             onClick={() => openAddDay({ phase: 1, week: 1, day: 1 })}
-            className="inline-flex items-center gap-2 rounded-[16px] bg-grad px-4 py-3 font-display text-[13px] font-semibold uppercase tracking-wide text-bg"
+            className="inline-flex items-center gap-2 rounded-[16px] bg-grad px-4 py-3 font-display text-[13px] font-semibold uppercase tracking-wide text-on-grad"
           >
             <svg
               viewBox="0 0 24 24"
@@ -584,7 +583,7 @@ function DayTreeRow({
               {day.title}
             </span>
             {isToday ? (
-              <span className="flex-shrink-0 rounded-full bg-accent2 px-2 py-0.5 font-cond text-[9px] font-semibold uppercase tracking-wide text-bg">
+              <span className="flex-shrink-0 rounded-full bg-accent2 px-2 py-0.5 font-cond text-[9px] font-semibold uppercase tracking-wide text-on-grad">
                 Today
               </span>
             ) : null}

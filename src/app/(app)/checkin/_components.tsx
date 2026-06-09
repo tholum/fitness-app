@@ -234,7 +234,7 @@ function CheckCircle({
       {done ? (
         <svg
           viewBox="0 0 24 24"
-          className="h-[18px] w-[18px] fill-none stroke-bg [stroke-width:3]"
+          className="h-[18px] w-[18px] fill-none stroke-on-grad [stroke-width:3]"
         >
           <path d="M5 13l4 4L19 7" />
         </svg>
@@ -289,7 +289,7 @@ function RpeSelector({
   onChange: (next: number | null) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="grid grid-cols-5 gap-1.5">
       {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
         const active = value === n;
         return (
@@ -299,9 +299,9 @@ function RpeSelector({
             aria-pressed={active}
             // Tapping the active chip clears it (RPE is optional).
             onClick={() => onChange(active ? null : n)}
-            className={`h-9 w-9 rounded-[10px] border font-display text-sm font-bold transition-colors ${
+            className={`h-9 w-full rounded-[10px] border font-display text-sm font-bold transition-colors ${
               active
-                ? "border-transparent bg-grad text-bg"
+                ? "border-transparent bg-grad text-on-grad"
                 : "border-line bg-surface2 text-text"
             }`}
           >
@@ -495,7 +495,7 @@ export function CheckinClient({
             >
               <div className="flex items-center gap-[14px]">
                 <div
-                  className="flex h-[46px] w-[46px] flex-shrink-0 items-center justify-center rounded-[13px] [&_svg]:h-[22px] [&_svg]:w-[22px] [&_svg]:fill-none [&_svg]:stroke-bg [&_svg]:[stroke-width:2]"
+                  className="flex h-[46px] w-[46px] flex-shrink-0 items-center justify-center rounded-[13px] [&_svg]:h-[22px] [&_svg]:w-[22px] [&_svg]:fill-none [&_svg]:stroke-on-grad [&_svg]:[stroke-width:2]"
                   style={{ background: blockGradient(block.type) }}
                 >
                   <BlockGlyph type={block.type} />
@@ -632,7 +632,7 @@ export function CheckinClient({
             min="0"
             value={durationStr}
             onChange={(e) => setDurationStr(e.target.value)}
-            placeholder={estMinutes != null ? String(estMinutes) : "0"}
+            placeholder={estMinutes != null ? String(estMinutes) : "45"}
             className="w-full rounded-[14px] border border-line bg-bg2 px-3.5 py-3 font-display text-base text-text outline-none placeholder:text-faint focus:border-accent"
           />
         </label>
@@ -694,13 +694,13 @@ export function CheckinClient({
         type="button"
         onClick={handleComplete}
         disabled={complete || isCompleting}
-        className="mt-[14px] w-full rounded-[18px] bg-grad p-[17px] font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
+        className="mt-[14px] w-full rounded-[18px] bg-grad p-[17px] font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-on-grad shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
       >
         {complete
           ? "✓ Session Complete"
           : isCompleting
             ? "Saving…"
-            : allDone
+            : allDone || blocks.length === 0
               ? "✓ Mark Session Complete"
               : `✓ Mark Session Complete (${doneCount}/${blocks.length})`}
       </button>
@@ -768,7 +768,7 @@ export function NudgeInbox({ nudges, unseenCount }: NudgeInboxProps) {
             {headline}
           </span>
           {isNew ? (
-            <span className="flex-shrink-0 rounded-full bg-accent2 px-1.5 py-0.5 font-cond text-[9px] font-bold uppercase tracking-wide text-bg">
+            <span className="flex-shrink-0 rounded-full bg-accent2 px-1.5 py-0.5 font-cond text-[9px] font-bold uppercase tracking-wide text-on-grad">
               New
             </span>
           ) : null}

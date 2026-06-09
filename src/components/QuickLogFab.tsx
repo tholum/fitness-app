@@ -86,16 +86,20 @@ export function QuickLogFab({ trackers }: { trackers: QuickLogTracker[] }) {
   return (
     <>
       {/* The FAB itself — replaces the old direct /checkin link. */}
+      {/* self-start + -mt-5 anchor the circle to the bar's top edge for a
+          constant ~20px overhang on every device — items-center would vary
+          the protrusion with the safe-area inset (the nav content box
+          shrinks, pushing a centered FAB higher on notched phones). */}
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Quick log"
         aria-haspopup="dialog"
-        className="mx-1.5 -mt-5 flex h-[58px] w-[58px] flex-shrink-0 items-center justify-center rounded-full bg-grad shadow-[0_8px_22px_rgba(200,98,45,.5)]"
+        className="mx-1.5 -mt-5 flex h-[58px] w-[58px] flex-shrink-0 select-none items-center justify-center self-start rounded-full bg-grad shadow-[0_8px_22px_var(--fab-glow)]"
       >
         <svg
           viewBox="0 0 24 24"
-          className="h-[26px] w-[26px] fill-none stroke-bg [stroke-width:2.6]"
+          className="h-[26px] w-[26px] fill-none stroke-on-grad [stroke-width:2.6]"
         >
           <path d="M12 5v14M5 12h14" />
         </svg>
@@ -106,16 +110,16 @@ export function QuickLogFab({ trackers }: { trackers: QuickLogTracker[] }) {
         <Link
                 href="/checkin"
                 onClick={close}
-                className="mb-3 flex items-center gap-3 rounded-[16px] bg-grad px-4 py-3.5 text-bg shadow-[0_6px_18px_rgba(200,98,45,.28)]"
+                className="mb-3 flex items-center gap-3 rounded-[16px] bg-grad px-4 py-3.5 text-on-grad shadow-[0_6px_18px_rgba(200,98,45,.28)]"
               >
-                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[11px] bg-bg/15 text-lg">
+                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[11px] bg-on-grad/15 text-lg">
                   ✓
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-display text-[14px] font-bold uppercase tracking-[0.04em]">
                     Check In
                   </span>
-                  <span className="block font-cond text-[11px] uppercase tracking-wide text-bg/80">
+                  <span className="block font-cond text-[11px] uppercase tracking-wide text-on-grad/80">
                     Start or complete today&apos;s session
                   </span>
                 </span>
@@ -214,7 +218,7 @@ export function QuickLogFab({ trackers }: { trackers: QuickLogTracker[] }) {
                             <span
                               className={cx(
                                 "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full",
-                                done ? "bg-grad text-bg" : "border border-line text-faint",
+                                done ? "bg-grad text-on-grad" : "border border-line text-faint",
                               )}
                               aria-hidden
                             >

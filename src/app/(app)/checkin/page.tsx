@@ -8,7 +8,7 @@ import {
   resolveTodayDay,
 } from "@/lib/queries";
 import { StatPill } from "@/components/ui";
-import { validateVideoUrl } from "@/lib/format";
+import { validateVideoUrl, weekdayLabel } from "@/lib/format";
 import type {
   BlockType,
   Json,
@@ -177,10 +177,16 @@ export default async function CheckinPage() {
 
   // Header eyebrow: derive from the program like Today's hero does, so a
   // custom program with a video link isn't mislabeled "MTNTOUGH · Backcountry".
+  // Without a program, fall back to today's date (like /body's header) so the
+  // eyebrow doesn't duplicate the "Check In" h1 right below it.
   const eyebrow =
     program?.source === "MTNTOUGH"
       ? "MTNTOUGH"
-      : program?.name ?? "Check In";
+      : program?.name ??
+        `${weekdayLabel(new Date(), true)}, ${new Date().toLocaleDateString(
+          "en-US",
+          { month: "long", day: "numeric" },
+        )}`;
 
   return (
     <>
@@ -194,7 +200,11 @@ export default async function CheckinPage() {
             Check In
           </h1>
         </div>
-        <StatPill>{estMinutes ? `~${estMinutes} min` : metaLine(scheduledDay, blocks.length)}</StatPill>
+        {estMinutes || scheduledDay || blocks.length > 0 ? (
+          <StatPill>
+            {estMinutes ? `~${estMinutes} min` : metaLine(scheduledDay, blocks.length)}
+          </StatPill>
+        ) : null}
       </div>
 
       <CheckinClient

@@ -39,7 +39,9 @@ export default async function GoalsPage() {
 
   // Backfill: ensure the singleton exercise tracker exists and matches the
   // current schedule (no-op for users created after Phase 4). Idempotent.
-  await syncExerciseTracker();
+  // false: we are mid-render — the page is force-dynamic, so the fresh data
+  // is read right below; revalidatePath here would crash the route.
+  await syncExerciseTracker(false);
 
   const type: GoalType = profile.goal_type === "count" ? "count" : "days";
   const days = Array.isArray(profile.training_days)

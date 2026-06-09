@@ -68,7 +68,7 @@ function FuelRing({ kcal, goal }: { kcal: number; goal: number }) {
         cy={center}
         r={r}
         fill="none"
-        stroke="rgba(255,255,255,.07)"
+        stroke="var(--line)"
         strokeWidth={stroke}
       />
       <circle

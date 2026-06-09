@@ -270,7 +270,6 @@ export function DietProvider({ tracker, targets, children }: DietProviderProps) 
               defaultValue={editingMeal?.meal ?? ""}
               placeholder="e.g. Chicken &amp; rice"
               className={inputCls}
-              autoFocus
             />
           </Field>
           <Field label="Calories" suffix="kcal">
@@ -362,7 +361,6 @@ export function DietProvider({ tracker, targets, children }: DietProviderProps) 
               defaultValue={targets.kcal || ""}
               placeholder="2400"
               className={inputCls}
-              autoFocus
             />
           </Field>
           <div className="flex gap-3">

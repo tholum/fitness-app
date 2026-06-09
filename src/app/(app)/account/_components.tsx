@@ -145,7 +145,7 @@ export function ProfileForm({
             className="h-[68px] w-[68px] flex-shrink-0 rounded-full border border-line object-cover"
           />
         ) : (
-          <div className="flex h-[68px] w-[68px] flex-shrink-0 items-center justify-center rounded-full bg-grad font-display text-2xl font-bold text-bg shadow-[0_0_24px_rgba(200,98,45,.35)]">
+          <div className="flex h-[68px] w-[68px] flex-shrink-0 items-center justify-center rounded-full bg-grad font-display text-2xl font-bold text-on-grad shadow-[0_0_24px_rgba(200,98,45,.35)]">
             {initials(name)}
           </div>
         )}
@@ -371,7 +371,6 @@ function PRForm({
           defaultValue={editing?.label ?? ""}
           placeholder="e.g. Back Squat 1RM"
           className={inputCls}
-          autoFocus
         />
       </Field>
       <div className="flex gap-3">
@@ -655,7 +654,7 @@ export function ProgressRecords({ prs, sessions }: ProgressRecordsProps) {
           <button
             type="button"
             onClick={openNew}
-            className="inline-flex items-center gap-2 rounded-[16px] bg-grad px-4 py-3 font-display text-[13px] font-semibold uppercase tracking-wide text-bg"
+            className="inline-flex items-center gap-2 rounded-[16px] bg-grad px-4 py-3 font-display text-[13px] font-semibold uppercase tracking-wide text-on-grad"
           >
             <svg
               viewBox="0 0 24 24"

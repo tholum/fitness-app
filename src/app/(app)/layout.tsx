@@ -73,7 +73,14 @@ export default async function AppLayout({
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: featureFlagScript(appearance) }}
       />
-      <div className="relative mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col bg-bg">
+      {/* overflow-x-clip: the decorative glow blobs below bleed past the
+          column; without the clip they widen the document, which expands the
+          mobile layout viewport — breaking every fixed-position sheet (they
+          render off-center/clipped) and letting the whole app pan sideways. */}
+      <div
+        className="relative mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-x-clip bg-bg"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
         {/* Keyboard skip link: first focusable element, jumps past the nav. */}
         <a href="#main" className="skip-link">
           Skip to content

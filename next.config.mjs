@@ -76,6 +76,9 @@ const nextConfig = {
   // Produces a self-contained server in .next/standalone for a tiny Docker image.
   output: "standalone",
   reactStrictMode: true,
+  // The floating dev-tools badge overlaps real UI in the bottom-left corner
+  // (and photobombs every UI-gallery capture).
+  devIndicators: false,
   experimental: {
     // typedRoutes: true,
   },

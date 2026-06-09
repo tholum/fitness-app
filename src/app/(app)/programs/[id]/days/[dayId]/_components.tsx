@@ -482,7 +482,7 @@ function BlocksSection(props: DayEditorProps) {
                 setAddError(null);
                 setAddOpen(true);
               }}
-              className="inline-flex items-center gap-2 rounded-[16px] bg-grad px-4 py-3 font-display text-[13px] font-semibold uppercase tracking-wide text-bg"
+              className="inline-flex items-center gap-2 rounded-[16px] bg-grad px-4 py-3 font-display text-[13px] font-semibold uppercase tracking-wide text-on-grad"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -575,7 +575,6 @@ function AddBlockSheet({
             type="text"
             placeholder="e.g. Main Strength"
             className={inputCls}
-            autoFocus
           />
         </Field>
         <Field label="Type">
@@ -847,7 +846,7 @@ function BlockCard({
       <Sheet open={editOpen} title="Edit Block" onClose={() => setEditOpen(false)}>
         <form onSubmit={onEditBlock} className="space-y-4">
           <Field label="Label">
-            <input name="label" type="text" defaultValue={block.label} className={inputCls} autoFocus />
+            <input name="label" type="text" defaultValue={block.label} className={inputCls} />
           </Field>
           <Field label="Type">
             <select name="type" defaultValue={block.type} className={cx(inputCls, "appearance-none")}>

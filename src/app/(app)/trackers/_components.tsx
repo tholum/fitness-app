@@ -308,7 +308,6 @@ export function TrackersProvider({ children }: { children: ReactNode }) {
               onChange={(e) => setTitle(e.target.value)}
               maxLength={120}
               placeholder="e.g. Guitar Practice"
-              autoFocus
               className="w-full rounded-[14px] border border-line bg-bg2 px-3.5 py-3 font-display text-base text-text outline-none placeholder:text-faint focus:border-accent"
             />
           </label>
@@ -359,7 +358,7 @@ export function TrackersProvider({ children }: { children: ReactNode }) {
                   {accent === a.key ? (
                     <svg
                       viewBox="0 0 24 24"
-                      className="h-4 w-4 fill-none stroke-bg [stroke-width:3]"
+                      className="h-4 w-4 fill-none stroke-on-grad [stroke-width:3]"
                     >
                       <path d="M5 13l4 4L19 7" />
                     </svg>
@@ -382,7 +381,7 @@ export function TrackersProvider({ children }: { children: ReactNode }) {
                   className={cx(
                     "rounded-[16px] border px-3.5 py-3 text-left transition-colors",
                     cadence === c.value
-                      ? "border-transparent bg-grad text-bg"
+                      ? "border-transparent bg-grad text-on-grad"
                       : "border-line bg-surface text-text",
                   )}
                 >
@@ -392,7 +391,7 @@ export function TrackersProvider({ children }: { children: ReactNode }) {
                   <div
                     className={cx(
                       "text-[11px] leading-tight",
-                      cadence === c.value ? "text-bg/75" : "text-muted",
+                      cadence === c.value ? "text-on-grad/75" : "text-muted",
                     )}
                   >
                     {c.sub}
@@ -465,7 +464,7 @@ export function TrackersProvider({ children }: { children: ReactNode }) {
           <button
             type="submit"
             disabled={pending}
-            className="w-full rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
+            className="w-full rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-on-grad shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
           >
             {pending ? "Saving…" : editing ? "Save Changes" : "Create Tracker"}
           </button>
@@ -551,7 +550,7 @@ export function NewTrackerButton({
       <button
         type="button"
         onClick={openCreate}
-        className="flex w-full items-center justify-center gap-2 rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)]"
+        className="flex w-full items-center justify-center gap-2 rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-on-grad shadow-[0_8px_24px_rgba(200,98,45,.3)]"
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current [stroke-width:2.6]">
           <path d="M12 5v14M5 12h14" />
@@ -705,7 +704,7 @@ function TickButton({
         "flex w-full items-center justify-center gap-2 rounded-[14px] px-4 py-3 font-display text-[14px] font-semibold uppercase tracking-[0.08em] transition-colors disabled:opacity-60",
         done
           ? "border border-line bg-surface text-accent2"
-          : "bg-grad text-bg shadow-[0_6px_18px_rgba(200,98,45,.28)]",
+          : "bg-grad text-on-grad shadow-[0_6px_18px_rgba(200,98,45,.28)]",
       )}
     >
       <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current [stroke-width:2.6]">
@@ -752,7 +751,7 @@ function AmountLogger({
             type="button"
             disabled={disabled}
             onClick={() => onAdd(p)}
-            className="flex-1 rounded-[12px] bg-grad px-2 py-2.5 font-display text-[13px] font-bold uppercase tracking-wide text-bg disabled:opacity-60"
+            className="flex-1 rounded-[12px] bg-grad px-2 py-2.5 font-display text-[13px] font-bold uppercase tracking-wide text-on-grad disabled:opacity-60"
           >
             +{p}
           </button>

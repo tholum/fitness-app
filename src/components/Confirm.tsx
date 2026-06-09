@@ -133,8 +133,8 @@ function ConfirmDialog({
             ref={confirmRef}
             type="button"
             onClick={onConfirm}
-            className={`flex-1 rounded-[14px] px-4 py-3 font-display text-sm font-semibold uppercase tracking-wide text-bg ${
-              opts.destructive ? "bg-danger" : "bg-grad"
+            className={`flex-1 rounded-[14px] px-4 py-3 font-display text-sm font-semibold uppercase tracking-wide ${
+              opts.destructive ? "bg-danger text-bg" : "bg-grad text-on-grad"
             }`}
           >
             {opts.confirmLabel ?? "Confirm"}

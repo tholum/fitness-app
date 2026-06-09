@@ -219,7 +219,7 @@ export default async function TodayPage() {
             return (
               <section
                 key="session"
-                className="relative z-10 mb-3.5 overflow-hidden rounded-[26px] bg-grad p-5 text-bg"
+                className="relative z-10 mb-3.5 overflow-hidden rounded-[26px] bg-grad p-5 text-on-grad"
               >
                 {/* soft corner highlight */}
                 <div
@@ -250,7 +250,7 @@ export default async function TodayPage() {
                     </div>
                     {/* Phase 4: scheduled rest day — never counts against streak. */}
                     {isRestDay ? (
-                      <span className="flex-shrink-0 rounded-full bg-[rgba(28,26,23,.18)] px-2.5 py-1 font-cond text-[10px] font-bold uppercase tracking-wide text-bg">
+                      <span className="flex-shrink-0 rounded-full bg-on-grad/[.18] px-2.5 py-1 font-cond text-[10px] font-bold uppercase tracking-wide text-on-grad">
                         Rest day
                       </span>
                     ) : null}
@@ -271,7 +271,7 @@ export default async function TodayPage() {
                           href={videoUrl ?? "https://mtntough.com"}
                           target="_blank"
                           rel="noreferrer"
-                          className={`flex flex-1 items-center justify-center gap-[7px] rounded-[14px] bg-bg p-[13px] font-display text-[13px] font-semibold uppercase tracking-wide text-text ${
+                          className={`flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[14px] bg-bg px-2 py-[13px] font-display text-[13px] font-semibold uppercase tracking-wide text-text ${
                             videoUrl ? "" : "opacity-70"
                           }`}
                         >
@@ -282,7 +282,7 @@ export default async function TodayPage() {
                         </a>
                         <Link
                           href="/checkin"
-                          className="flex flex-1 items-center justify-center gap-[7px] rounded-[14px] border-[1.5px] border-[rgba(28,26,23,.4)] bg-[rgba(28,26,23,.15)] p-[13px] font-display text-[13px] font-semibold uppercase tracking-wide text-bg"
+                          className="flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[14px] border-[1.5px] border-on-grad/40 bg-on-grad/15 px-2 py-[13px] font-display text-[13px] font-semibold uppercase tracking-wide text-on-grad"
                         >
                           <svg
                             viewBox="0 0 24 24"
@@ -361,7 +361,7 @@ export default async function TodayPage() {
                         {crew.members.slice(0, 4).map((m, i) => (
                           <span
                             key={m.user_id}
-                            className="flex h-[38px] w-[38px] items-center justify-center rounded-full border-2 border-bg font-display text-sm font-bold text-bg"
+                            className="flex h-[38px] w-[38px] items-center justify-center rounded-full border-2 border-on-grad font-display text-sm font-bold text-on-grad"
                             style={{
                               background: avatarColor(m.user_id || m.display_name),
                               marginRight:
@@ -382,19 +382,19 @@ export default async function TodayPage() {
                     </Card>
                   </Link>
                 ) : (
-                  <Card className="mb-2.5 flex items-center gap-3 p-3.5">
-                    <div className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-line bg-surface2 text-base">
-                      👋
-                    </div>
-                    <div className="flex-1 text-[13px] text-muted">
-                      No crew yet —{" "}
-                      <span className="text-text">join or start one</span> to
-                      train together.
-                    </div>
-                    <Link href="/crew" className="font-display text-gold">
-                      ›
-                    </Link>
-                  </Card>
+                  <Link href="/crew" className="block">
+                    <Card className="mb-2.5 flex items-center gap-3 p-3.5">
+                      <div className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-line bg-surface2 text-base">
+                        👋
+                      </div>
+                      <div className="flex-1 text-[13px] text-muted">
+                        No crew yet —{" "}
+                        <span className="text-text">join or start one</span> to
+                        train together.
+                      </div>
+                      <span className="font-display text-gold">›</span>
+                    </Card>
+                  </Link>
                 )}
               </div>
             );
@@ -438,15 +438,22 @@ export default async function TodayPage() {
                       {tracker.title}
                     </div>
                     <div className="font-cond text-[10px] uppercase tracking-wide text-faint">
-                      {TYPE_LABEL[tracker.type]}
+                      {TYPE_LABEL[tracker.type].toLowerCase() !==
+                      tracker.title.trim().toLowerCase()
+                        ? TYPE_LABEL[tracker.type]
+                        : null}
                       {progress.streak > 0 ? (
                         <span className="ml-2 text-gold">🔥 {progress.streak}</span>
                       ) : null}
                     </div>
                   </div>
-                  <span className="font-display text-gold" aria-hidden>
-                    ›
-                  </span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-3.5 w-3.5 fill-none stroke-current [stroke-width:2.4] text-gold"
+                    aria-hidden
+                  >
+                    <path d="M9 6l6 6-6 6" />
+                  </svg>
                 </div>
                 <WeeklyProgress data={progress} ringSize={44} />
               </Card>
@@ -459,7 +466,7 @@ export default async function TodayPage() {
       {hasSession ? (
         <Link
           href="/checkin"
-          className="relative z-10 mt-1 flex w-full items-center justify-center gap-2 rounded-[18px] bg-grad p-[17px] font-display text-[15px] font-semibold uppercase tracking-wide text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)]"
+          className="relative z-10 mt-1 flex w-full items-center justify-center gap-2 rounded-[18px] bg-grad p-[17px] font-display text-[15px] font-semibold uppercase tracking-wide text-on-grad shadow-[0_8px_24px_rgba(200,98,45,.3)]"
         >
           <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] fill-current">
             <path d="M8 5v14l11-7z" />
@@ -469,7 +476,7 @@ export default async function TodayPage() {
       ) : (
         <Link
           href="/programs"
-          className="relative z-10 mt-1 flex w-full items-center justify-center gap-2 rounded-[18px] bg-grad p-[17px] font-display text-[15px] font-semibold uppercase tracking-wide text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)]"
+          className="relative z-10 mt-1 flex w-full items-center justify-center gap-2 rounded-[18px] bg-grad p-[17px] font-display text-[15px] font-semibold uppercase tracking-wide text-on-grad shadow-[0_8px_24px_rgba(200,98,45,.3)]"
         >
           <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] fill-none stroke-current [stroke-width:2.4]">
             <path d="M12 5v14M5 12h14" />

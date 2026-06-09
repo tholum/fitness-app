@@ -259,7 +259,7 @@ export function BibleProvider({ tracker, children }: BibleProviderProps) {
                   className={cx(
                     "flex w-full items-center gap-3 rounded-[16px] border px-4 py-3.5 text-left transition-colors",
                     on
-                      ? "border-transparent bg-grad text-bg"
+                      ? "border-transparent bg-grad text-on-grad"
                       : "border-line bg-surface text-text",
                   )}
                 >
@@ -270,7 +270,7 @@ export function BibleProvider({ tracker, children }: BibleProviderProps) {
                     <div
                       className={cx(
                         "truncate text-xs",
-                        on ? "text-bg/75" : "text-muted",
+                        on ? "text-on-grad/75" : "text-muted",
                       )}
                     >
                       {p.blurb} · {p.days.length} days
@@ -325,7 +325,7 @@ export function BibleProvider({ tracker, children }: BibleProviderProps) {
             type="button"
             onClick={() => savePlan(planId)}
             disabled={pending}
-            className="mt-1 w-full rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
+            className="mt-1 w-full rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-on-grad shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
           >
             {pending ? "Saving…" : planId ? "Use This Plan" : "No Plan (Just Mark Read)"}
           </button>
@@ -354,13 +354,13 @@ function CadenceChip({
       aria-pressed={active}
       className={cx(
         "rounded-[16px] border px-4 py-3.5 text-left transition-colors",
-        active ? "border-transparent bg-grad text-bg" : "border-line bg-surface text-text",
+        active ? "border-transparent bg-grad text-on-grad" : "border-line bg-surface text-text",
       )}
     >
       <div className="font-display text-[14px] font-bold uppercase tracking-[0.03em]">
         {title}
       </div>
-      <div className={cx("text-xs", active ? "text-bg/75" : "text-muted")}>{sub}</div>
+      <div className={cx("text-xs", active ? "text-on-grad/75" : "text-muted")}>{sub}</div>
     </button>
   );
 }
@@ -456,7 +456,7 @@ export function MarkReadButton({
         "flex w-full items-center justify-center gap-2 rounded-[16px] px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] transition-colors disabled:opacity-60",
         done
           ? "border border-line bg-surface text-accent2"
-          : "bg-grad text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)]",
+          : "bg-grad text-on-grad shadow-[0_8px_24px_rgba(200,98,45,.3)]",
       )}
     >
       <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current [stroke-width:2.6]">
@@ -498,7 +498,7 @@ export function WeekDayToggle({
         className={cx(
           "flex h-9 w-9 items-center justify-center rounded-full border transition-colors",
           filled
-            ? "border-transparent bg-grad text-bg"
+            ? "border-transparent bg-grad text-on-grad"
             : scheduled
               ? "border-accent2/50 bg-accent2/10 text-muted"
               : "border-line bg-surface text-faint",

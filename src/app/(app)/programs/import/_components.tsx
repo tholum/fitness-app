@@ -319,7 +319,7 @@ export function ImportPanel({ importAction }: { importAction: ImportFn }) {
               type="button"
               onClick={onConfirm}
               disabled={pending}
-              className="mt-3 w-full rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
+              className="mt-3 w-full rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-on-grad shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
             >
               {pending ? "Importing…" : "Import this program"}
             </button>
@@ -435,17 +435,25 @@ export function ExportPanel({
         <span className="mb-1.5 block font-cond text-[11px] font-semibold uppercase tracking-wide text-muted">
           Program
         </span>
-        <select
-          value={selected}
-          onChange={(e) => setSelected(e.target.value)}
-          className="w-full appearance-none rounded-[14px] border border-line bg-bg2 px-3.5 py-3 font-display text-base text-text outline-none focus:border-accent"
-        >
-          {programs.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={selected}
+            onChange={(e) => setSelected(e.target.value)}
+            className="w-full appearance-none rounded-[14px] border border-line bg-bg2 px-3.5 py-3 pr-9 font-display text-base text-text outline-none focus:border-accent"
+          >
+            {programs.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <svg
+            viewBox="0 0 24 24"
+            className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 fill-none stroke-muted [stroke-width:2]"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </div>
       </label>
       <button
         type="button"

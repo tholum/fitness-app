@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getProgress, type Progress } from "@/lib/queries";
 import { startOfWeek, toISODate } from "@/lib/format";
@@ -92,7 +93,7 @@ function LevelCard({ progress }: { progress: Progress }) {
 
   return (
     <Card className="mb-3.5 p-5 text-center">
-      <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-grad font-display text-3xl font-bold text-bg shadow-[0_0_30px_rgba(200,98,45,.4)]">
+      <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-grad font-display text-3xl font-bold text-on-grad shadow-[0_0_30px_rgba(200,98,45,.4)]">
         {level}
       </div>
       <div className="font-display text-lg font-semibold uppercase tracking-[0.03em] text-text">
@@ -192,7 +193,7 @@ function BadgeShelf({
   display.sort((a, b) => Number(b.earned) - Number(a.earned));
 
   return (
-    <div className="no-scrollbar flex gap-3 overflow-x-auto py-1">
+    <div className="no-scrollbar -mx-[18px] flex gap-3 overflow-x-auto px-[18px] py-1">
       {display.map(({ badge, earned: isEarned }) => (
         <div key={badge.key} className="w-[84px] flex-shrink-0 text-center">
           <div
@@ -255,6 +256,31 @@ export default async function ProgressPage() {
       <div className="gamify-feature">
         <LevelCard progress={progress} />
       </div>
+
+      {/* Door into the Goals hub — goals are configured there, measured here.
+          This is the only nav path to /goals (the bottom bar tab is Progress). */}
+      <Link href="/goals" className="mb-3.5 block">
+        <Card className="flex items-center gap-3 p-4">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[12px] border border-line bg-surface2 text-lg">
+            🎯
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-display text-[14px] font-bold uppercase tracking-[0.03em] text-text">
+              Goals
+            </div>
+            <div className="font-cond text-[10px] uppercase tracking-wide text-faint">
+              Set targets &amp; manage what you track
+            </div>
+          </div>
+          <svg
+            viewBox="0 0 24 24"
+            className="h-3.5 w-3.5 fill-none stroke-current [stroke-width:2.4] text-gold"
+            aria-hidden
+          >
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </Card>
+      </Link>
 
       <SectionHeader action={<span className="text-accent2">▲ this phase</span>}>
         Sessions Completed

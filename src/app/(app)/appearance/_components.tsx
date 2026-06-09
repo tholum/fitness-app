@@ -72,12 +72,12 @@ export function AccentSwatches({
             onClick={() => onChange(s.value)}
             style={{ backgroundImage: s.gradient }}
             className={cx(
-              "relative h-[54px] flex-1 rounded-[14px] border-2 transition-colors",
-              selected ? "border-white" : "border-transparent",
+              "relative h-[54px] flex-1 rounded-[14px] border-2 bg-origin-border transition-colors",
+              selected ? "border-text" : "border-transparent",
             )}
           >
             {selected ? (
-              <span className="absolute right-2 top-1 font-display text-base font-extrabold leading-none text-bg">
+              <span className="absolute right-2 top-1 font-display text-base font-extrabold leading-none text-on-grad">
                 ✓
               </span>
             ) : null}

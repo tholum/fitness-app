@@ -71,7 +71,7 @@ function CalorieRing({ kcal, goal }: { kcal: number; goal: number }) {
       role="img"
       aria-label={`${kcal} of ${goal || "—"} kilocalories`}
     >
-      <circle cx={center} cy={center} r={r} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth={stroke} />
+      <circle cx={center} cy={center} r={r} fill="none" stroke="var(--line)" strokeWidth={stroke} />
       <circle
         cx={center}
         cy={center}
@@ -230,11 +230,11 @@ export default async function DietPage() {
           <SectionHeader>This Week</SectionHeader>
           <Card className="mb-3.5 p-4">
             <WeeklyProgress data={weekly} />
-            <p className="mt-3 font-cond text-[11px] uppercase tracking-wide text-faint">
-              {weekly.target > 0
-                ? `${Math.round(weekly.done)} / ${Math.round(weekly.target)} ${weekly.unit ?? ""} this week`
-                : "Weekly calorie total"}
-            </p>
+            {weekly.target > 0 ? null : (
+              <p className="mt-3 font-cond text-[11px] uppercase tracking-wide text-faint">
+                Weekly calorie total
+              </p>
+            )}
           </Card>
         </>
       ) : null}

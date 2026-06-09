@@ -199,21 +199,28 @@ export function ExercisesProvider({
               defaultValue={editing?.name ?? ""}
               placeholder="e.g. Back Squat"
               className={inputCls}
-              autoFocus
             />
           </Field>
           <Field label="Category">
-            <select
-              name="category"
-              defaultValue={editing?.category ?? "strength"}
-              className={cx(inputCls, "appearance-none")}
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                name="category"
+                defaultValue={editing?.category ?? "strength"}
+                className={cx(inputCls, "appearance-none pr-9")}
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              <svg
+                viewBox="0 0 24 24"
+                className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 fill-none stroke-muted [stroke-width:2]"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </div>
           </Field>
           <Field label="Default video URL">
             <input
@@ -340,9 +347,10 @@ export function ExerciseList({
 
       {/* Category filter chips — single horizontally-scrollable row.
          no-scrollbar + overflow-x-auto + flex-nowrap keeps every category on
-         one line and reachable at 390px; px-0.5 gives the first/last chip a
-         little breathing room so they aren't flush-clipped at the edges. */}
-      <div className="no-scrollbar -mx-0.5 mb-3.5 flex flex-nowrap gap-2 overflow-x-auto px-0.5 pb-0.5">
+         one line and reachable at 390px; -mx-[18px]/px-[18px] bleeds the rail
+         to the screen edges so chips scroll off-screen instead of clipping at
+         the content gutter. */}
+      <div className="no-scrollbar -mx-[18px] mb-3.5 flex flex-nowrap gap-2 overflow-x-auto px-[18px] pb-0.5">
         <FilterChip active={cat === "all"} onClick={() => setCat("all")}>
           All
         </FilterChip>
@@ -368,7 +376,7 @@ export function ExerciseList({
               <button
                 type="button"
                 onClick={openNew}
-                className="inline-flex items-center gap-2 rounded-[16px] bg-grad px-4 py-3 font-display text-[13px] font-semibold uppercase tracking-wide text-bg"
+                className="inline-flex items-center gap-2 rounded-[16px] bg-grad px-4 py-3 font-display text-[13px] font-semibold uppercase tracking-wide text-on-grad"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -476,7 +484,7 @@ function FilterChip({
       className={cx(
         "flex-shrink-0 rounded-full border px-3.5 py-2 font-display text-xs font-semibold uppercase tracking-wide transition-colors",
         active
-          ? "border-transparent bg-grad text-bg"
+          ? "border-transparent bg-grad text-on-grad"
           : "border-line bg-surface text-muted",
       )}
     >

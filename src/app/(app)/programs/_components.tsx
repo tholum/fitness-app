@@ -188,7 +188,6 @@ export function ProgramsProvider({
               type="text"
               placeholder="e.g. Backcountry Strength — Spring"
               className={inputCls}
-              autoFocus
             />
           </Field>
           <p className="text-xs text-muted">
@@ -261,7 +260,7 @@ export function ProgramsView({
             <button
               type="button"
               onClick={openNew}
-              className="inline-flex items-center gap-2 rounded-[16px] bg-grad px-4 py-3 font-display text-[13px] font-semibold uppercase tracking-wide text-bg"
+              className="inline-flex items-center gap-2 rounded-[16px] bg-grad px-4 py-3 font-display text-[13px] font-semibold uppercase tracking-wide text-on-grad"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -341,7 +340,7 @@ function MyProgramCard({
             </span>
             <SourceBadge source={program.source} />
             {active ? (
-              <span className="flex-shrink-0 rounded-full bg-accent2 px-2 py-0.5 font-cond text-[9px] font-semibold uppercase tracking-wide text-bg">
+              <span className="flex-shrink-0 rounded-full bg-accent2 px-2 py-0.5 font-cond text-[9px] font-semibold uppercase tracking-wide text-on-grad">
                 Active
               </span>
             ) : null}
@@ -396,7 +395,7 @@ function TemplateCard({
           </span>
           <SourceBadge source={program.source} />
           {enrolled ? (
-            <span className="flex-shrink-0 rounded-full bg-accent2 px-2 py-0.5 font-cond text-[9px] font-semibold uppercase tracking-wide text-bg">
+            <span className="flex-shrink-0 rounded-full bg-accent2 px-2 py-0.5 font-cond text-[9px] font-semibold uppercase tracking-wide text-on-grad">
               Active
             </span>
           ) : null}
@@ -408,7 +407,7 @@ function TemplateCard({
           type="button"
           onClick={() => enroll(program.id)}
           disabled={busy || enrolled}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-[12px] bg-grad px-3 py-2.5 font-display text-xs font-semibold uppercase tracking-wide text-bg disabled:opacity-60"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-[12px] bg-grad px-3 py-2.5 font-display text-xs font-semibold uppercase tracking-wide text-on-grad disabled:opacity-60"
         >
           {enrolled ? "Enrolled" : busy ? "…" : "Enroll"}
         </button>

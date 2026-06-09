@@ -151,15 +151,22 @@ function GoalRow({
               {tracker.title}
             </div>
             <div className="font-cond text-[10px] uppercase tracking-wide text-faint">
-              {TYPE_LABEL[tracker.type]}
+              {TYPE_LABEL[tracker.type].toLowerCase() !==
+              tracker.title.trim().toLowerCase()
+                ? TYPE_LABEL[tracker.type]
+                : null}
               {progress.streak > 0 ? (
                 <span className="ml-2 text-gold">🔥 {progress.streak}</span>
               ) : null}
             </div>
           </div>
-          <span className="font-display text-gold" aria-hidden>
-            ›
-          </span>
+          <svg
+            viewBox="0 0 24 24"
+            className="h-3.5 w-3.5 fill-none stroke-current [stroke-width:2.4] text-gold"
+            aria-hidden
+          >
+            <path d="M9 6l6 6-6 6" />
+          </svg>
         </div>
         <WeeklyProgress data={progress} ringSize={48} />
       </Card>

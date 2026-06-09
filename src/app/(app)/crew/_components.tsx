@@ -212,7 +212,7 @@ export function NudgeButton({ toUser, crewId, className }: NudgeButtonProps) {
       onClick={send}
       disabled={sent || pending}
       className={cx(
-        "flex-shrink-0 rounded-xl border-none px-3.5 py-2.5 font-display text-xs font-semibold uppercase tracking-wide text-bg disabled:opacity-80",
+        "flex-shrink-0 rounded-xl border-none px-3.5 py-2.5 font-display text-xs font-semibold uppercase tracking-wide text-on-grad disabled:opacity-80",
         sent ? "bg-accent2" : "bg-grad2",
         className,
       )}
@@ -395,7 +395,10 @@ export function CrewOnboarding() {
               name="code"
               type="text"
               placeholder="e.g. RIDGE7"
-              className={cx(inputCls, "uppercase tracking-[0.15em]")}
+              className={cx(
+                inputCls,
+                "uppercase tracking-[0.15em] placeholder:normal-case placeholder:tracking-normal",
+              )}
               autoCapitalize="characters"
               autoComplete="off"
             />
@@ -713,10 +716,12 @@ export function CrewMenu({ crewId, crewName, weeklyGoal, isOwner }: CrewMenuProp
               name="code"
               type="text"
               placeholder="e.g. RIDGE7"
-              className={cx(inputCls, "uppercase tracking-[0.15em]")}
+              className={cx(
+                inputCls,
+                "uppercase tracking-[0.15em] placeholder:normal-case placeholder:tracking-normal",
+              )}
               autoCapitalize="characters"
               autoComplete="off"
-              autoFocus
             />
           </Field>
           <ErrorNote message={error} />
@@ -737,7 +742,6 @@ export function CrewMenu({ crewId, crewName, weeklyGoal, isOwner }: CrewMenuProp
               placeholder="Crew name"
               className={inputCls}
               autoComplete="off"
-              autoFocus
             />
           </Field>
           <Field label="Weekly session goal (per member)" suffix="/ wk">
@@ -853,7 +857,7 @@ export function RemoveMemberButton({ crewId, userId, name }: RemoveMemberButtonP
       disabled={pending}
       aria-label={`Remove ${name} from the crew`}
       className={cx(
-        "flex-shrink-0 rounded-xl border px-3 py-2 font-cond text-[11px] font-semibold uppercase tracking-wide transition-colors disabled:opacity-60",
+        "flex-shrink-0 rounded-xl border px-3.5 py-2.5 font-display text-xs font-semibold uppercase tracking-wide transition-colors disabled:opacity-60",
         confirming
           ? "border-danger bg-danger/15 text-danger"
           : "border-line bg-surface2 text-muted",
@@ -918,7 +922,7 @@ export function NoteComposer({ crewId }: NoteComposerProps) {
         <button
           type="submit"
           disabled={pending || body.trim().length === 0}
-          className="ml-auto flex-shrink-0 rounded-xl bg-grad2 px-4 py-2 font-display text-xs font-semibold uppercase tracking-wide text-bg disabled:opacity-50"
+          className="ml-auto flex-shrink-0 rounded-xl bg-grad2 px-4 py-2 font-display text-xs font-semibold uppercase tracking-wide text-on-grad disabled:opacity-50"
         >
           {pending ? "Posting…" : "Post"}
         </button>

@@ -116,9 +116,9 @@ export default async function BiblePage() {
       {/* ── Streak hero ── */}
       {tracker ? (
         <Card className="mb-3.5 overflow-hidden p-0">
-          <div className="bg-grad px-5 py-6 text-bg">
+          <div className="bg-grad px-5 py-6 text-on-grad">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-[20px] bg-bg/15 [&_svg]:h-8 [&_svg]:w-8 [&_svg]:fill-none [&_svg]:stroke-bg [&_svg]:[stroke-width:1.8]">
+              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-[20px] bg-on-grad/15 [&_svg]:h-8 [&_svg]:w-8 [&_svg]:fill-none [&_svg]:stroke-on-grad [&_svg]:[stroke-width:1.8]">
                 <svg viewBox="0 0 24 24">
                   <path d="M12 3c1 3 4 4 4 8a4 4 0 11-8 0c0-2 1-3 2-4 1 2 2 2 2 4M12 3c-1 2-3 3-3 6" />
                 </svg>
@@ -127,13 +127,13 @@ export default async function BiblePage() {
                 <div className="font-display text-[44px] font-bold leading-none">
                   {streak}
                 </div>
-                <div className="font-cond text-[11px] font-semibold uppercase tracking-[0.14em] text-bg/80">
+                <div className="font-cond text-[11px] font-semibold uppercase tracking-[0.14em] text-on-grad/80">
                   {streak === 1 ? "day streak" : "day streak"}
                   {tracker.cadence_type === "specific_weekdays" ? " · scheduled days" : ""}
                 </div>
               </div>
             </div>
-            <p className="mt-4 font-cond text-[11px] uppercase tracking-wide text-bg/80">
+            <p className="mt-4 font-cond text-[11px] uppercase tracking-wide text-on-grad/80">
               {readCount} of 7 days read this week
             </p>
           </div>

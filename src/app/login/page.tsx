@@ -89,7 +89,7 @@ function useTurnstile() {
         if (widgetIdRef.current) return;
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           sitekey: TURNSTILE_SITE_KEY!,
-          theme: "dark",
+          theme: "auto",
           callback: (t) => setToken(t),
           "error-callback": () => setToken(null),
           "expired-callback": () => setToken(null),
@@ -284,8 +284,8 @@ function LoginForm() {
           <button
             type="button"
             onClick={() => switchMode("password")}
-            className={`flex-1 rounded-[14px] px-3 py-2.5 font-display text-xs font-semibold uppercase tracking-wider transition ${
-              mode === "password" ? "bg-grad text-bg" : "text-muted"
+            className={`flex-1 rounded-[18px] px-3 py-2.5 font-display text-xs font-semibold uppercase tracking-wider transition ${
+              mode === "password" ? "bg-grad text-on-grad" : "text-muted"
             }`}
           >
             Password
@@ -293,8 +293,8 @@ function LoginForm() {
           <button
             type="button"
             onClick={() => switchMode("magic")}
-            className={`flex-1 rounded-[14px] px-3 py-2.5 font-display text-xs font-semibold uppercase tracking-wider transition ${
-              mode === "magic" ? "bg-grad text-bg" : "text-muted"
+            className={`flex-1 rounded-[18px] px-3 py-2.5 font-display text-xs font-semibold uppercase tracking-wider transition ${
+              mode === "magic" ? "bg-grad text-on-grad" : "text-muted"
             }`}
           >
             Magic link
@@ -330,7 +330,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading || captchaMissing}
-                className="mt-1 w-full rounded-[18px] bg-grad px-4 py-4 font-display text-[15px] font-semibold uppercase tracking-wider text-bg shadow-[0_8px_24px_rgba(200,98,45,0.3)] disabled:opacity-60"
+                className="mt-1 w-full rounded-[18px] bg-grad px-4 py-4 font-display text-[15px] font-semibold uppercase tracking-wider text-on-grad shadow-[0_8px_24px_rgba(200,98,45,0.3)] disabled:opacity-60"
               >
                 {loading ? "..." : isSignUp ? "Create account" : "Sign in"}
               </button>
@@ -368,7 +368,7 @@ function LoginForm() {
                   </div>
 
                   <label className="flex flex-col gap-1.5">
-                    <span className="font-cond text-[11px] uppercase tracking-wider text-muted">
+                    <span className="font-cond text-xs uppercase tracking-wide text-muted">
                       Sign-in code
                     </span>
                     <input
@@ -398,7 +398,7 @@ function LoginForm() {
                     type="button"
                     onClick={handleVerifyCode}
                     disabled={loading || code.length < 6}
-                    className="mt-1 w-full rounded-[18px] bg-grad px-4 py-4 font-display text-[15px] font-semibold uppercase tracking-wider text-bg shadow-[0_8px_24px_rgba(200,98,45,0.3)] disabled:opacity-60"
+                    className="mt-1 w-full rounded-[18px] bg-grad px-4 py-4 font-display text-[15px] font-semibold uppercase tracking-wider text-on-grad shadow-[0_8px_24px_rgba(200,98,45,0.3)] disabled:opacity-60"
                   >
                     {loading ? "..." : "Verify & sign in"}
                   </button>
@@ -431,7 +431,7 @@ function LoginForm() {
                   <button
                     type="submit"
                     disabled={loading || captchaMissing}
-                    className="mt-1 w-full rounded-[18px] bg-grad px-4 py-4 font-display text-[15px] font-semibold uppercase tracking-wider text-bg shadow-[0_8px_24px_rgba(200,98,45,0.3)] disabled:opacity-60"
+                    className="mt-1 w-full rounded-[18px] bg-grad px-4 py-4 font-display text-[15px] font-semibold uppercase tracking-wider text-on-grad shadow-[0_8px_24px_rgba(200,98,45,0.3)] disabled:opacity-60"
                   >
                     {loading ? "..." : "Send magic link"}
                   </button>
@@ -489,7 +489,7 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="font-cond text-[11px] uppercase tracking-wider text-muted">
+      <span className="font-cond text-xs uppercase tracking-wide text-muted">
         {label}
       </span>
       <input

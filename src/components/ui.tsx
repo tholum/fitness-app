@@ -204,7 +204,7 @@ export function SubmitBtn({
     <button
       type="submit"
       disabled={pending}
-      className="mt-1 w-full rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-bg shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
+      className="mt-1 w-full rounded-[16px] bg-grad px-4 py-3.5 font-display text-[15px] font-semibold uppercase tracking-[0.094em] text-on-grad shadow-[0_8px_24px_rgba(200,98,45,.3)] disabled:opacity-60"
     >
       {pending ? pendingLabel : children}
     </button>
@@ -257,8 +257,8 @@ export function Segmented<T extends string>({
             type="button"
             onClick={() => onChange(opt.value)}
             className={cx(
-              "flex-1 rounded-[10px] p-2.5 font-display text-xs font-semibold uppercase tracking-wide transition-colors",
-              active ? "bg-grad text-bg" : "text-muted",
+              "flex-1 whitespace-nowrap rounded-[10px] p-2.5 font-display text-xs font-semibold uppercase tracking-wide transition-colors",
+              active ? "bg-grad text-on-grad" : "text-muted",
             )}
           >
             {opt.label}

@@ -1240,14 +1240,19 @@ export async function saveTrainingGoal(input: {
  * before Phase 4 (saveTrainingGoal already syncs on every edit). RLS-safe: the
  * SECURITY DEFINER function only ever touches the caller's own rows.
  */
-export async function syncExerciseTracker(): Promise<ActionResult<{ id: string }>> {
+export async function syncExerciseTracker(
+  /** Pass false when calling during render (e.g. the /goals/training page's
+      backfill) — revalidatePath during render is illegal in Next.js and
+      crashes the route. Defaults to true for real action invocations. */
+  revalidate = true,
+): Promise<ActionResult<{ id: string }>> {
   const { supabase, user } = await requireUser();
   if (!user) return { ok: false, error: "Not authenticated" };
 
   const { data, error } = await supabase.rpc("sync_my_exercise_tracker");
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/goals/training");
+  if (revalidate) revalidatePath("/goals/training");
   return { ok: true, data: { id: data as string } };
 }
 

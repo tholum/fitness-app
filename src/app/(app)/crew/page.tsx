@@ -174,7 +174,7 @@ function reactionStateFor(item: FeedItem, meId: string | null) {
 function Avatar({ name, userId, size = 38 }: { name: string; userId: string; size?: number }) {
   return (
     <div
-      className="flex flex-shrink-0 items-center justify-center rounded-full font-display font-bold text-bg"
+      className="flex flex-shrink-0 items-center justify-center rounded-full font-display font-bold text-on-grad"
       style={{
         width: size,
         height: size,
@@ -252,7 +252,7 @@ export default async function CrewPage() {
       />
 
       {/* ── Shared weekly goal + trained-today ───────────────────────── */}
-      <Card className="mb-3.5 bg-grad p-5 text-bg">
+      <Card className="mb-3.5 bg-grad p-5 text-on-grad">
         <div className="font-cond text-[11px] font-bold uppercase tracking-[0.18em] opacity-80">
           {crew.name} · This Week
         </div>
@@ -265,9 +265,9 @@ export default async function CrewPage() {
           </div>
         </div>
         {/* Progress bar (on-gradient, dark fill for contrast). */}
-        <div className="mt-3 h-2.5 overflow-hidden rounded-md bg-bg/25">
+        <div className="mt-3 h-2.5 overflow-hidden rounded-md bg-on-grad/25">
           <div
-            className="h-full rounded-md bg-bg/85"
+            className="h-full rounded-md bg-on-grad/85"
             style={{ width: `${goalPct}%` }}
           />
         </div>
@@ -283,9 +283,10 @@ export default async function CrewPage() {
                   className="flex h-8 w-8 items-center justify-center rounded-full font-display text-[11px] font-bold"
                   style={{
                     background: avColor(m.user_id),
-                    color: "var(--bg)",
+                    color: "var(--on-grad)",
                     border: "2px solid var(--bg)",
-                    opacity: m.trainedToday ? 1 : 0.55,
+                    opacity: m.trainedToday ? 1 : 0.8,
+                    filter: m.trainedToday ? undefined : "saturate(0.5)",
                   }}
                 >
                   {initials(m.display_name)}
@@ -415,7 +416,7 @@ export default async function CrewPage() {
                           key={g.trackerId}
                           className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-cond text-[11px] font-semibold uppercase tracking-wide ${
                             g.met
-                              ? "border-transparent bg-grad text-bg"
+                              ? "border-transparent bg-grad text-on-grad"
                               : "border-line bg-surface2 text-muted"
                           }`}
                           title={`${g.title}: ${Math.round(g.done)}${

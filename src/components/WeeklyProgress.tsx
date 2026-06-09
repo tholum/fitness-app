@@ -40,8 +40,11 @@ function cx(...parts: Array<string | false | null | undefined>): string {
 }
 
 function fmt(n: number): string {
-  // Trim trailing .0 for whole numbers; keep one decimal otherwise.
-  return Number.isInteger(n) ? String(n) : (Math.round(n * 10) / 10).toString();
+  // Trim trailing .0 for whole numbers; keep one decimal otherwise. Grouped
+  // ("16,800") so large kcal-style targets scan cleanly.
+  return Number.isInteger(n)
+    ? n.toLocaleString("en-US")
+    : (Math.round(n * 10) / 10).toLocaleString("en-US");
 }
 
 export interface WeeklyProgressProps {
@@ -103,7 +106,9 @@ export function WeeklyProgress({
                       filled
                         ? "bg-grad"
                         : scheduled
-                          ? "bg-accent2/40"
+                          ? // Hollow moss ring: scheduled-but-not-done must read
+                            // STRONGER than unscheduled, in both themes.
+                            "border-[1.5px] border-accent2 bg-accent2/20"
                           : "bg-line-solid",
                     )}
                   />

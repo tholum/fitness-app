@@ -23,5 +23,9 @@ next-env.d.ts
 supabase/.branches
 supabase/.temp
 
+# UI gallery output (generated screenshots — large + local-only).
+# Root-anchored so it never matches the scripts/ui-gallery/ source dir.
+/ui-gallery/
+
 # private ops runbook (infra details — never commit)
 DEPLOY.local.md

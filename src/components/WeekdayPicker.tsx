@@ -9,7 +9,7 @@
    trackers.scheduled_weekdays and profiles.training_days (0009).
 
    Reuses the visual language of the training-goal day picker
-   (src/app/(app)/goals/training/_components.tsx): active chip = bg-grad text-bg,
+   (src/app/(app)/goals/training/_components.tsx): active chip = bg-grad text-on-grad,
    inactive = border-line bg-surface text-muted, uppercase display type.
    ════════════════════════════════════════════════════════════════════ */
 
@@ -68,7 +68,7 @@ export function WeekdayPicker({
               onClick={() => toggle(d.dow)}
               className={`min-w-[44px] flex-1 rounded-[12px] border px-2 py-3 font-display text-sm font-semibold uppercase tracking-wide transition-colors disabled:opacity-50 ${
                 on
-                  ? "border-transparent bg-grad text-bg"
+                  ? "border-transparent bg-grad text-on-grad"
                   : "border-line bg-surface text-muted"
               }`}
             >

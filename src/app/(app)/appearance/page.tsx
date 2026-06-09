@@ -36,8 +36,8 @@ const ACCENT_SWATCHES: readonly AccentSwatch[] = [
 ];
 
 const THEME_OPTIONS = [
-  { value: "dark", label: "Trailhead Dark" },
-  { value: "light", label: "Alpine Light" },
+  { value: "dark", label: "Dark" },
+  { value: "light", label: "Light" },
   { value: "auto", label: "Auto" },
 ] as const satisfies ReadonlyArray<{ value: ThemeMode; label: string }>;
 

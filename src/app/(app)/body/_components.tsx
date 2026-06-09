@@ -344,7 +344,6 @@ export function BodyLogProvider({
               defaultValue={currentWeight ?? ""}
               placeholder="0.0"
               className={inputCls}
-              autoFocus
             />
           </Field>
           <div className="flex gap-3">
@@ -406,7 +405,6 @@ export function BodyLogProvider({
               defaultValue={editingMeal?.meal ?? ""}
               placeholder="e.g. Lunch — elk, rice, greens"
               className={inputCls}
-              autoFocus
             />
           </Field>
           <Field label="Calories" suffix="kcal">
