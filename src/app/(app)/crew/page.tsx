@@ -19,6 +19,7 @@ import {
   CrewMenu,
   RemoveMemberButton,
   NoteComposer,
+  AcceptProgramInviteButton,
 } from "./_components";
 
 /* ════════════════════════════════════════════════════════════════════
@@ -79,6 +80,7 @@ const FEED_KIND_LABEL: Record<string, { icon: string; verb: string }> = {
   pr: { icon: "🏆", verb: "hit a PR" },
   badge: { icon: "🎖️", verb: "earned a badge" },
   goal: { icon: "🎯", verb: "logged a goal" },
+  program_invite: { icon: "📋", verb: "invited the crew to a program" },
   note: { icon: "📝", verb: "posted" },
 };
 
@@ -215,10 +217,29 @@ export default async function CrewPage() {
   // Member display-name lookup for the crew goals surface.
   const nameById = new Map(members.map((m) => [m.user_id, m.display_name]));
 
+  // Which program invites has the viewer already accepted? (programs created
+  // by accept_program_invite carry the originating post id as provenance.)
+  const inviteIds = feed.filter((f) => f.kind === "program_invite").map((f) => f.id);
+  const acceptedInvites = new Set<string>();
+  if (inviteIds.length > 0) {
+    const supabase = await createClient();
+    const { data: accepted } = await supabase
+      .from("programs")
+      .select("invite_post_id")
+      .in("invite_post_id", inviteIds);
+    for (const row of (accepted ?? []) as Array<{ invite_post_id: string | null }>) {
+      if (row.invite_post_id) acceptedInvites.add(row.invite_post_id);
+    }
+  }
+
   const meId = profile?.id ?? null;
   const isOwner = meId != null && crew.created_by === meId;
-  const goalTotal = crew.weekly_goal * Math.max(1, totalCount);
-  const goalPct = goalTotal > 0 ? Math.min(100, Math.round((crewTotal / goalTotal) * 100)) : 0;
+  // Accountability is per-member goals now (no shared session quota): the
+  // hero aggregates everyone's OWN shared goals for the week.
+  const goalPct =
+    crewGoals.total > 0
+      ? Math.min(100, Math.round((crewGoals.metCount / crewGoals.total) * 100))
+      : 0;
 
   // Sort members for a friendly (non-competitive) read: trained-today first,
   // then by name. This is presentation only — no ranks are shown.
@@ -242,35 +263,44 @@ export default async function CrewPage() {
           />
         }
         action={
-          <CrewMenu
-            crewId={crew.id}
-            crewName={crew.name}
-            weeklyGoal={crew.weekly_goal}
-            isOwner={isOwner}
-          />
+          <CrewMenu crewId={crew.id} crewName={crew.name} isOwner={isOwner} />
         }
       />
 
-      {/* ── Shared weekly goal + trained-today ───────────────────────── */}
+      {/* ── Crew accountability — everyone's OWN goals, one pulse ─────── */}
       <Card className="mb-3.5 bg-grad p-5 text-on-grad">
         <div className="font-cond text-[11px] font-bold uppercase tracking-[0.18em] opacity-80">
           {crew.name} · This Week
         </div>
-        <div className="mt-2 flex items-end justify-between">
-          <div className="font-display text-[28px] font-bold uppercase leading-none">
-            {crewTotal} <span className="opacity-70">/ {goalTotal}</span>
-          </div>
-          <div className="font-display text-sm font-semibold uppercase tracking-wide opacity-85">
-            sessions
-          </div>
-        </div>
-        {/* Progress bar (on-gradient, dark fill for contrast). */}
-        <div className="mt-3 h-2.5 overflow-hidden rounded-md bg-on-grad/25">
-          <div
-            className="h-full rounded-md bg-on-grad/85"
-            style={{ width: `${goalPct}%` }}
-          />
-        </div>
+        {crewGoals.total > 0 ? (
+          <>
+            <div className="mt-2 flex items-end justify-between">
+              <div className="font-display text-[28px] font-bold uppercase leading-none">
+                {crewGoals.metCount} <span className="opacity-70">/ {crewGoals.total}</span>
+              </div>
+              <div className="font-display text-sm font-semibold uppercase tracking-wide opacity-85">
+                goals hit
+              </div>
+            </div>
+            {/* Progress bar (on-gradient, dark fill for contrast). */}
+            <div className="mt-3 h-2.5 overflow-hidden rounded-md bg-on-grad/25">
+              <div
+                className="h-full rounded-md bg-on-grad/85"
+                style={{ width: `${goalPct}%` }}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mt-2 font-display text-[22px] font-bold uppercase leading-none">
+              {crewTotal} {crewTotal === 1 ? "session" : "sessions"} so far
+            </div>
+            <p className="mt-2 font-cond text-[11px] uppercase tracking-wide opacity-80">
+              Everyone brings their own goals — set yours on the Progress tab
+              and they&apos;ll show up here for the crew.
+            </p>
+          </>
+        )}
         <div className="mt-3 flex items-center gap-3">
           <div className="flex">
             {orderedMembers.slice(0, 4).map((m, i) => (
@@ -475,7 +505,18 @@ export default async function CrewPage() {
                 <p className="mt-2.5 text-[13px] text-text">{item.body}</p>
               ) : null}
 
-              {item.kind !== "note" ? (
+              {item.kind === "program_invite" ? (
+                item.user_id === meId ? (
+                  <p className="mt-2 font-cond text-[11px] uppercase tracking-wide text-faint">
+                    Your invite — crew members can join below
+                  </p>
+                ) : (
+                  <AcceptProgramInviteButton
+                    postId={item.id}
+                    joined={acceptedInvites.has(item.id)}
+                  />
+                )
+              ) : item.kind !== "note" ? (
                 <span className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface2 px-2.5 py-1.5 text-xs">
                   {meta.icon}
                   <b className="font-display font-semibold uppercase tracking-wide">

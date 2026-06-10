@@ -482,7 +482,6 @@ async function advanceEnrollment(
 // ── createCrew ────────────────────────────────────────────────────────────────
 export interface CreateCrewInput {
   name: string;
-  weeklyGoal?: number;
 }
 
 export async function createCrew(
@@ -500,14 +499,10 @@ export async function createCrew(
   // a SECURITY DEFINER fn (create_crew). Direct client INSERTs into crew_members
   // are no longer permitted — default-deny, see migration 0003 — so the owner
   // row MUST be created server-side; the fn also forces role='owner' so it can
-  // never be client-selected. The DB still defaults invite_code/weekly_goal.
-  const weeklyGoal =
-    input.weeklyGoal != null ? Math.max(1, Math.round(input.weeklyGoal)) : null;
-
-  const { data, error } = await supabase.rpc("create_crew", {
-    p_name: name,
-    p_weekly_goal: weeklyGoal,
-  });
+  // never be client-selected. No shared quota: a crew is an accountability
+  // circle around each member's OWN goals (crews.weekly_goal is legacy and
+  // takes its DB default).
+  const { data, error } = await supabase.rpc("create_crew", { p_name: name });
   if (error) return { ok: false, error: error.message };
   const crewId = (data as string | null) ?? null;
   if (!crewId) return { ok: false, error: "Could not create crew" };
@@ -609,7 +604,7 @@ async function clearActiveCrewIfMatches(
 // ── editCrew ──────────────────────────────────────────────────────────────────
 export async function editCrew(
   crewId: string,
-  patch: { name?: string; weeklyGoal?: number },
+  patch: { name?: string },
 ): Promise<ActionResult> {
   const { supabase, user } = await requireUser();
   if (!user) return { ok: false, error: "Not authenticated" };
@@ -622,7 +617,6 @@ export async function editCrew(
     if (nameErr) return nameErr;
     fields.name = name;
   }
-  if (patch.weeklyGoal !== undefined) fields.weekly_goal = Math.max(1, Math.round(patch.weeklyGoal));
   if (Object.keys(fields).length === 0) return { ok: true };
 
   // RLS (crews_update) restricts this to created_by = auth.uid().
@@ -632,6 +626,108 @@ export async function editCrew(
   revalidatePath("/crew");
   revalidatePath("/today");
   return { ok: true };
+}
+
+// ── inviteCrewToProgram ───────────────────────────────────────────────────────
+/** Post a program invite into the active crew's feed. Any member can accept
+ *  (acceptProgramInvite) to get their own editable copy + active enrollment.
+ *  body carries the program name so the feed renders without a cross-user
+ *  join; ref_id is the inviter's program (deep-copied at accept time). */
+export async function inviteCrewToProgram(
+  programId: string,
+): Promise<ActionResult> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { ok: false, error: "Not authenticated" };
+
+  // Must be a program the caller can see (their own, or a public template).
+  const { data: program } = await supabase
+    .from("programs")
+    .select("id, name, owner_id, is_public")
+    .eq("id", programId)
+    .maybeSingle();
+  if (!program) return { ok: false, error: "Program not found" };
+
+  const crewId = await resolveActiveCrewId(supabase, user.id);
+  if (!crewId) return { ok: false, error: "Join a crew first" };
+
+  // One open invite per (program, crew): re-inviting just bumps via a fresh
+  // post; skip if an identical invite by anyone is already in the feed.
+  const { data: existing } = await supabase
+    .from("feed_posts")
+    .select("id")
+    .eq("crew_id", crewId)
+    .eq("kind", "program_invite")
+    .eq("ref_id", programId)
+    .limit(1)
+    .maybeSingle();
+  if (existing) return { ok: true };
+
+  // RLS feed_insert: user_id = auth.uid() AND is_crew_member(crew_id).
+  const { error } = await supabase.from("feed_posts").insert({
+    user_id: user.id,
+    crew_id: crewId,
+    kind: "program_invite",
+    ref_id: programId,
+    body: (program as { name: string }).name,
+  });
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/crew");
+  return { ok: true };
+}
+
+// ── acceptProgramInvite ───────────────────────────────────────────────────────
+/** Accept a crew program invite: SECURITY DEFINER deep-copy of the inviter's
+ *  program (idempotent per post), then enroll in the copy (pause any other
+ *  active enrollment, seed the scheduler cursor to the first day). */
+export async function acceptProgramInvite(
+  postId: string,
+): Promise<ActionResult<{ programId: string }>> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { ok: false, error: "Not authenticated" };
+
+  const { data, error } = await supabase.rpc("accept_program_invite", {
+    p_post: postId,
+  });
+  if (error || !data) {
+    return { ok: false, error: error?.message ?? "Could not accept invite" };
+  }
+  const programId = data as string;
+
+  // Enroll (same steps as enrollInProgram on /programs).
+  await supabase
+    .from("program_enrollments")
+    .update({ status: "paused" })
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .neq("program_id", programId);
+
+  const { data: firstDay } = await supabase
+    .from("program_days")
+    .select("id")
+    .eq("program_id", programId)
+    .order("phase", { ascending: true })
+    .order("week", { ascending: true })
+    .order("day", { ascending: true })
+    .order("order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  const { error: enrollErr } = await supabase.from("program_enrollments").upsert(
+    {
+      user_id: user.id,
+      program_id: programId,
+      status: "active",
+      current_day_id: (firstDay?.id as string) ?? null,
+    },
+    { onConflict: "user_id,program_id" },
+  );
+  if (enrollErr) return { ok: false, error: enrollErr.message };
+
+  revalidatePath("/crew");
+  revalidatePath("/programs");
+  revalidatePath("/today");
+  return { ok: true, data: { programId } };
 }
 
 // ── removeMember (owner-only) ─────────────────────────────────────────────────

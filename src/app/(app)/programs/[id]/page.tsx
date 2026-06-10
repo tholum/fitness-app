@@ -10,6 +10,7 @@ import {
   ReadOnlyCloneCTA,
   type DayRow,
   type ActionResult,
+  InviteCrewButton,
 } from "./_components";
 
 /* ════════════════════════════════════════════════════════════════════
@@ -188,6 +189,18 @@ export default async function ProgramDetailPage({
 
   const readOnly = !user || program.owner_id !== user.id;
 
+  // Crew-rally affordance: only meaningful if the viewer is in a crew.
+  let hasCrew = false;
+  if (user) {
+    const { data: membership } = await supabase
+      .from("crew_members")
+      .select("crew_id")
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle();
+    hasCrew = membership != null;
+  }
+
   const [{ data: days }, { data: enrollment }] = await Promise.all([
     supabase
       .from("program_days")
@@ -239,6 +252,8 @@ export default async function ProgramDetailPage({
       setCurrentDayAction={setCurrentDay}
     >
       <ProgramHeader name={program.name} source={program.source} readOnly={readOnly} />
+
+      {hasCrew ? <InviteCrewButton programId={id} /> : null}
 
       {readOnly ? (
         <ReadOnlyCloneCTA programId={id} cloneAction={cloneProgram} />

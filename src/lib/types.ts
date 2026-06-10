@@ -32,7 +32,13 @@ export type BlockType =
   | "conditioning"
   | "mobility"
   | "other";
-export type FeedKind = "session" | "pr" | "badge" | "note" | "goal";
+export type FeedKind =
+  | "session"
+  | "pr"
+  | "badge"
+  | "note"
+  | "goal"
+  | "program_invite";
 
 // ── TRACKERS / GOALS (0010) ────────────────────────────────────────────
 /**

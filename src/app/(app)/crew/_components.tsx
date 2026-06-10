@@ -43,17 +43,11 @@ import {
   removeMember,
   setActiveCrew,
   postNote,
+  acceptProgramInvite,
 } from "@/lib/actions";
 import type { Crew } from "@/lib/types";
 
 /** Parse a form input into a finite number, returning null for blank/invalid. */
-function num(v: FormDataEntryValue | null): number | null {
-  if (v === null) return null;
-  const s = String(v).trim();
-  if (s === "") return null;
-  const n = Number(s);
-  return Number.isFinite(n) ? n : null;
-}
 
 /* ── Shared form primitives (mirrors body/_components.tsx) ────────────── */
 
@@ -299,13 +293,12 @@ export function CrewOnboarding() {
     setJoinErr(null);
     const fd = new FormData(e.currentTarget);
     const name = String(fd.get("name") ?? "").trim();
-    const weeklyGoal = num(fd.get("weeklyGoal")) ?? 5;
     if (!name) {
       setCreateErr("Name your crew.");
       return;
     }
     startTransition(async () => {
-      const res = await createCrew({ name, weeklyGoal });
+      const res = await createCrew({ name });
       if (!res.ok) {
         setCreateErr(res.error ?? "Could not create crew.");
         return;
@@ -345,8 +338,9 @@ export function CrewOnboarding() {
           Start a crew
         </div>
         <p className="mx-auto mt-2 max-w-[280px] text-sm text-muted">
-          Crews are cooperative — you share a weekly goal, cheer each other on,
-          and nudge anyone who hasn&apos;t trained. No rankings, ever.
+          Crews are cooperative — everyone brings their own goals, you cheer
+          each other on, and nudge anyone who hasn&apos;t trained. No
+          rankings, ever.
         </p>
       </div>
 
@@ -365,18 +359,10 @@ export function CrewOnboarding() {
               autoComplete="off"
             />
           </Field>
-          <Field label="Weekly session goal (per member)" suffix="/ wk">
-            <input
-              name="weeklyGoal"
-              type="number"
-              inputMode="numeric"
-              step="1"
-              min="1"
-              defaultValue={5}
-              placeholder="5"
-              className={inputCls}
-            />
-          </Field>
+          <p className="font-cond text-[11px] uppercase tracking-wide text-faint">
+            No shared quota — everyone brings their own goals and the crew
+            keeps each other accountable.
+          </p>
           <ErrorNote message={createErr} />
           <SubmitBtn pending={pending} pendingLabel="Creating…">
             Create Crew
@@ -570,7 +556,7 @@ export function CrewSwitcher({ crews, activeCrewId, activeName, meId }: CrewSwit
    CrewMenu — overflow / settings menu
    ─────────────────────────────────────────────────────────────────────
    • Join another crew (joinCrew via sheet)
-   • Edit crew (creator only — editCrew name/weekly_goal via sheet)
+   • Edit crew (creator only — editCrew name via sheet)
    • Leave crew (leaveCrew with a confirm step)
    Member removal lives inline on each roster row (RemoveMemberButton) so
    it sits next to the person; this menu owns crew-level actions.
@@ -581,11 +567,10 @@ type MenuSheet = "join" | "edit" | "leave" | null;
 export interface CrewMenuProps {
   crewId: string;
   crewName: string;
-  weeklyGoal: number;
   isOwner: boolean;
 }
 
-export function CrewMenu({ crewId, crewName, weeklyGoal, isOwner }: CrewMenuProps) {
+export function CrewMenu({ crewId, crewName, isOwner }: CrewMenuProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [sheet, setSheet] = useState<MenuSheet>(null);
@@ -622,16 +607,12 @@ export function CrewMenu({ crewId, crewName, weeklyGoal, isOwner }: CrewMenuProp
     setError(null);
     const fd = new FormData(e.currentTarget);
     const name = String(fd.get("name") ?? "").trim();
-    const goal = num(fd.get("weeklyGoal"));
     if (!name) {
       setError("Name can't be empty.");
       return;
     }
     startTransition(async () => {
-      const res = await editCrew(crewId, {
-        name,
-        weeklyGoal: goal ?? weeklyGoal,
-      });
+      const res = await editCrew(crewId, { name });
       if (!res.ok) {
         setError(res.error ?? "Could not save changes.");
         return;
@@ -742,18 +723,6 @@ export function CrewMenu({ crewId, crewName, weeklyGoal, isOwner }: CrewMenuProp
               placeholder="Crew name"
               className={inputCls}
               autoComplete="off"
-            />
-          </Field>
-          <Field label="Weekly session goal (per member)" suffix="/ wk">
-            <input
-              name="weeklyGoal"
-              type="number"
-              inputMode="numeric"
-              step="1"
-              min="1"
-              defaultValue={weeklyGoal}
-              placeholder="5"
-              className={inputCls}
             />
           </Field>
           <ErrorNote message={error} />
@@ -928,5 +897,54 @@ export function NoteComposer({ crewId }: NoteComposerProps) {
         </button>
       </div>
     </form>
+  );
+}
+
+/* ── AcceptProgramInviteButton ─────────────────────────────────────────
+   Feed CTA on a kind='program_invite' post: deep-copies the inviter's
+   program into the member's account (idempotent server-side) and enrolls
+   them. `joined` reflects a previously accepted invite. */
+
+export function AcceptProgramInviteButton({
+  postId,
+  joined,
+}: {
+  postId: string;
+  joined: boolean;
+}) {
+  const router = useRouter();
+  const [done, setDone] = useState(joined);
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function accept() {
+    if (done || pending) return;
+    setError(null);
+    startTransition(async () => {
+      const res = await acceptProgramInvite(postId);
+      if (!res.ok) {
+        setError(res.error ?? "Could not join the program.");
+        return;
+      }
+      setDone(true);
+      router.refresh();
+    });
+  }
+
+  return (
+    <div className="mt-2.5">
+      <button
+        type="button"
+        onClick={accept}
+        disabled={done || pending}
+        className={cx(
+          "rounded-xl border-none px-3.5 py-2.5 font-display text-xs font-semibold uppercase tracking-wide text-on-grad disabled:opacity-80",
+          done ? "bg-accent2" : "bg-grad",
+        )}
+      >
+        {done ? "✓ Enrolled" : pending ? "Joining…" : "Join program"}
+      </button>
+      <ErrorNote message={error} />
+    </div>
   );
 }

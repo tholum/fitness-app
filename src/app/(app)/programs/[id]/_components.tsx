@@ -26,6 +26,7 @@ import Link from "next/link";
 import { Card, SubmitBtn, ErrorNote } from "@/components/ui";
 import { Sheet } from "@/components/Sheet";
 import { cx } from "@/lib/cx";
+import { inviteCrewToProgram } from "@/lib/actions";
 import { useConfirm } from "@/components/Confirm";
 
 /* ── shared shapes (kept local so the file is self-contained) ─────────── */
@@ -640,5 +641,58 @@ function DayTreeRow({
         )}
       </div>
     </Card>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Invite crew to this program
+   Posts a program_invite into the active crew's feed (server resolves the
+   crew); members accept from /crew to get their own copy + enrollment.
+   Rendered only when the viewer is in a crew.
+   ════════════════════════════════════════════════════════════════════ */
+
+export function InviteCrewButton({ programId }: { programId: string }) {
+  const [sent, setSent] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function invite() {
+    if (sent || pending) return;
+    setError(null);
+    startTransition(async () => {
+      const res = await inviteCrewToProgram(programId);
+      if (!res.ok) {
+        setError(res.error ?? "Could not invite your crew.");
+        return;
+      }
+      setSent(true);
+    });
+  }
+
+  return (
+    <div className="mb-3.5">
+      <button
+        type="button"
+        onClick={invite}
+        disabled={sent || pending}
+        className={cx(
+          "inline-flex items-center gap-2 rounded-[14px] border px-3.5 py-2.5 font-display text-xs font-semibold uppercase tracking-wide disabled:opacity-80",
+          sent
+            ? "border-transparent bg-accent2 text-on-grad"
+            : "border-line bg-surface text-text",
+        )}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="h-4 w-4 fill-none stroke-current [stroke-width:1.9]"
+        >
+          <circle cx="9" cy="8" r="3" />
+          <circle cx="17" cy="9" r="2.5" />
+          <path d="M3 20v-1a5 5 0 015-5h2a5 5 0 015 5v1M15 14h1a4 4 0 014 4v2" />
+        </svg>
+        {sent ? "✓ Invite posted to crew" : pending ? "Inviting…" : "Invite crew to this program"}
+      </button>
+      <ErrorNote message={error} />
+    </div>
   );
 }
